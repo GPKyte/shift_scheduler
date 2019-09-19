@@ -40,21 +40,27 @@ class ScheduleInterpreter():
     # Take set of time ranges in human readable format
     # and return list of ranges in integer format
     # Used both to create shifts and worker availability
+    #
+    # Creating UID which expresses info like weekday + time
     def flatten_time_ranges(self, work_hours):
         DOW = 'MTWRFSU'
-        t1_until_t2_list = []
+        day_id = 0
+        flat = []
 
         for day in DOW:
-            possible_csv_of_time_ranges = work_hours.get(day)
-            if possible_csv_of_time_ranges:
-                t1_until_t2_list += possible_csv_of_time_ranges.split(', ')
+            ranges = []
+            todays_slots = []
 
-        flat = []
-        for i in range(len(t1_until_t2_list)):
-            left, right = t1_until_t2_list[i].split('-')
-            # Creating UID which expresses info like weekday + time
-            flat += [i * self.DOW_OFFSET + timeblock \
-                        for timeblock in self.create_time_range(left, right)]
+            if work_hours.get(day):
+                ranges += work_hours.get(day).split(', ')
+
+            for time_range in ranges:
+                start, end = time_range.split('-')
+                todays_slots += self.create_time_slots(start, end)
+
+            prefix = day_id * self.DOW_OFFSET
+            day_id += 1
+            flat += [prefix + slot for slot in todays_slots]
 
         return flat
 
@@ -85,7 +91,7 @@ class ScheduleInterpreter():
 
 
     # Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30
-    def create_time_range(self, start_inclusive, end_exclusive):
+    def create_time_slots(self, start_inclusive, end_exclusive):
         interval = self.SHIFT_LENGTH
         starting_minute = self.text_to_minutes(start_inclusive)
         ending_minute = self.text_to_minutes(end_exclusive)
