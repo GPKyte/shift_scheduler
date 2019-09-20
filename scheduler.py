@@ -22,7 +22,7 @@ class ScheduleInterpreter():
     FIRST_SHIFT  = '10:00'
 
     TYPE_OFFSET  = 10000000
-    ID_OFFSET    =  0100000
+    ID_OFFSET    =   100000
     DOW_OFFSET   =    10000
 
     # Creates UID for every possible time slot in week_availability
@@ -64,7 +64,13 @@ class ScheduleInterpreter():
                 ranges += work_hours.get(day).split(', ')
 
             for time_range in ranges:
-                start, end = time_range.split('-')
+                try:
+                    start, end = time_range.split('-')
+                except ValueError:
+                    print("Could not parse this time range: ", time_range)
+                    raw_input()
+                    continue
+
                 todays_slots += self.create_time_slots(start, end)
 
             prefix = day_id * self.DOW_OFFSET
