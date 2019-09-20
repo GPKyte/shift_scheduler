@@ -16,8 +16,13 @@
 # and each worker has a reasonable shift
 
 class ScheduleInterpreter():
-    DOW_OFFSET = 10000
     SHIFT_LENGTH = 15
+    TYPE_WORKER  = 2
+    TYPE_SHIFT   = 1
+
+    TYPE_OFFSET  = 10000000
+    ID_OFFSET    =  0100000
+    DOW_OFFSET   =    10000
 
     # Creates UID for every possible time slot in week_availability
     # The UID format is 'T##DMMMM':
@@ -25,15 +30,15 @@ class ScheduleInterpreter():
     #   # = ID of time slot (first worker's id is 00)
     #   D = Day of the week
     #   M = Minutes from 0-1439 (24 * 60 - 1) of given day
-    def generate_shifts(self, time_sets, type_id):
-        time_set_id = 0
+    def generate_shifts(self, type_id, *schedules):
+        schedule_id = 0
         shifts = []
 
-        for this_shift in shifts:
-            slots = self.flatten_time_ranges(this_shift)
-            shifts += [type_id * self.TYPE_OFFSET + time_set_id * self.ID_OFFSET \
-                    + shift for shift in slots]
-            shift_id += 1
+        for this_schedule in schedules:
+            slots = self.flatten_time_ranges(this_schedule)
+            prefix = type_id * self.TYPE_OFFSET + schedule_id * self.ID_OFFSET
+            shifts += [prefix + shift for shift in slots]
+            schedule_id += 1
 
         return shifts
 
