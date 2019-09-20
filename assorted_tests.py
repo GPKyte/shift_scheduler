@@ -6,6 +6,7 @@ def main():
     tester.test_generate_shifts()
     tester.test_convert_std_time()
     tester.test_week_hours_to_slots()
+    tester.test_timecheck()
 
 class TestMachine():
     ben_avail = {
@@ -24,6 +25,25 @@ class TestMachine():
     }
     def __init__(self):
         self.scheduler = ScheduleInterpreter()
+
+    def test_timecheck(self):
+        # hh, hh pm/am, hhpm/am, hh:mm, hh:mm pm/am, hh:mmpm/am
+        test_cases = {
+            "10": "10:00",
+            "10 pm": "22:00",
+            "10am": "10:00",
+            "11:15": "11:15",
+            "18:45": "18:45",
+            "18:45 pm": "18:45",
+            "6:45pm": "18:45"
+        }
+        for test in test_cases.keys():
+            try:
+                checked = self.scheduler.timecheck(test)
+                assert(test_cases[test] == checked)
+            except AssertionError:
+                print("%s -> %s != %s" % (test, test_cases[test], checked))
+
 
     def test_generate_shifts(self):
         M = [20000600, 20000615, 20000630, 20000645, 20000660, 20000675, 20000690, 20000705, 20000720, 20000735, 20000750, 20000765, 20000780, 20000795, 20000810, 20000825, 20000840, 20000855, 20000870, 20000885, 20000900, 20000915, 20000930, 20000945, 20000960, 20000975, 20000990, 20001005]
@@ -51,7 +71,7 @@ class TestMachine():
         except AssertionError:
             self.compare_inequal_collections(shifts_short, goal_short)
             self.compare_inequal_collections(shifts_ben, goal_ben)
-            self.compare_inequal_collections(shifts_combined == goal_combined)
+            self.compare_inequal_collections(shifts_combined, goal_combined)
 
     # For one employee availability
     # DMMMM where day is Day of week, from 0-6 (would 107 be better? For padding, yes)

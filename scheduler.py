@@ -19,6 +19,7 @@ class ScheduleInterpreter():
     SHIFT_LENGTH = 15
     TYPE_WORKER  = 2
     TYPE_SHIFT   = 1
+    FIRST_SHIFT  = '10:00'
 
     TYPE_OFFSET  = 10000000
     ID_OFFSET    =  0100000
@@ -31,6 +32,9 @@ class ScheduleInterpreter():
     #   D = Day of the week
     #   M = Minutes from 0-1439 (24 * 60 - 1) of given day
     def generate_shifts(self, type_id, *schedules):
+        if len(schedules) > 99 or type_id > 9:
+            raise ValueError
+
         schedule_id = 0
         shifts = []
 
@@ -87,12 +91,45 @@ class ScheduleInterpreter():
     def round_off(self, num, interval):
         return ((num // interval) * interval)
 
-    def timecheck(self, t):
-        # Several conditions exist for now return input
-        # pm/am
-        # No :mm
-        # no pm, but past noon (Need context)
-        return t
+    # Expecting:
+    #   hh
+    #   hh pm/am
+    #   hhpm/am
+    #   hh:mm
+    #   hh:mm pm/am
+    #   hh:mmpm/am
+    #
+    # Returning hh:mm
+    def timecheck(self, time):
+        tmp = None
+        is_past_noon = False
+        # Do not change order of operations carelessly
+        # 1
+        if ' ' in time: # Remove spaces to simplify cases
+            time = ''.join(time.split(' '))
+
+        # 2
+        if 'pm' in time:
+            tmp = time[:time.find('pm')] # Remove suffix
+            is_past_noon = True
+        elif 'am' in time:
+            tmp = time[:time.find('am')]
+        else:
+            tmp = time
+
+        # 3
+        if ':' in tmp:
+            result = tmp
+        else:
+            result = tmp + ':00'
+
+        # 4
+        if is_past_noon:
+            hr, m = result.split(':')
+            hr_proper = int(hr) % 12 + 12
+            result = "%s:%s" % (hr_proper, m)
+
+        return result
 
 
     # Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30
@@ -100,6 +137,15 @@ class ScheduleInterpreter():
         interval = self.SHIFT_LENGTH
         starting_minute = self.text_to_minutes(start_inclusive)
         ending_minute = self.text_to_minutes(end_exclusive)
+
+        if ending_minute <= starting_minute:
+            # Timecheck can't handle assumptions made in
+            # human-readable time ranges without more context
+            # this is a workaround to insure 24-hour upheld
+            ending_minute += (12 * 60)
+        if starting_minute < self.text_to_minutes(self.FIRST_SHIFT):
+            # Must be PM work if earlier than first shift
+            starting_minute += (12 * 60)
 
         start_in_minutes = self.round_off(starting_minute, interval)
         end_in_minutes = self.round_off(ending_minute, interval)
