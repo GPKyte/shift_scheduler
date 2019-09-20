@@ -1,4 +1,5 @@
 from scheduler import *
+from matcher import *
 # Test file for validating conversions between I/O
 
 def main():
@@ -7,6 +8,7 @@ def main():
     tester.test_convert_std_time()
     tester.test_week_hours_to_slots()
     tester.test_timecheck()
+    tester.test_join_lists()
 
 class TestMachine():
     ben_avail = {
@@ -25,6 +27,19 @@ class TestMachine():
     }
     def __init__(self):
         self.scheduler = ScheduleInterpreter()
+
+    def test_join_lists(self):
+        listA = range(0, 100)
+        listB = range(0, 100, 5)
+        listAB = make_pairs(listA, listB, lambda x: x)
+        goal_pairs = [(a, a) for a in range(0, 100, 5)]
+
+        try:
+            assert(listAB == goal_pairs)
+        except AssertionError:
+            pass
+            print("Results: ", listAB)
+            print("Goal: ", goal_pairs)
 
     def test_timecheck(self):
         # hh, hh pm/am, hhpm/am, hh:mm, hh:mm pm/am, hh:mmpm/am
