@@ -57,8 +57,10 @@ def main():
     all_slots = sorted(s_slots + w_slots)
     value_map = dict(zip(all_slots, range(len(all_slots))))
 
+    output_file = open('bipartite_graph_description.txt', 'w')
     print(len(all_slots))
     print(len(pairs))
+
     for p in pairs:
         print("%s %s 0" % (value_map[p[0]], value_map[p[1]]))
 
