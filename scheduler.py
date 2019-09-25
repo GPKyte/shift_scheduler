@@ -56,6 +56,7 @@ class ScheduleInterpreter():
         day_id = 0
         flat = []
 
+        # TODO: decrease indentation, yikes.
         for day in DOW:
             ranges = []
             todays_slots = []
@@ -79,6 +80,14 @@ class ScheduleInterpreter():
 
         return flat
 
+    # Master Schedule is a fancy name for a regular table
+    # This will show for each day of the week
+    # Who is assigned to each slot of the day
+    # But there's a catch, some or all days have n >= 2 shifts
+    # i.e. multiple employees are scheduled to cover each day
+    # and this needs clear representation in the table
+    def create_master_schedule(self):
+        pass
 
     def combine_adjacent_slots(self):
         pass
@@ -97,7 +106,7 @@ class ScheduleInterpreter():
     def round_off(self, num, interval):
         return ((num // interval) * interval)
 
-    # Expecting:
+    # Expecting any of the following formats:
     #   hh
     #   hh pm/am
     #   hhpm/am

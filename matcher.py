@@ -1,10 +1,11 @@
 # This file will take in schedule information
 # then match open shifts to available work hours
 from scheduler import ScheduleInterpreter
+from subprocess import check_output
 import json
 
-# Given two collections and a comparison lambda
-# Make pairs of all matches
+# Given two collections and a lambda to retrieve key
+# Make pairs of all matches using psuedo hash-join on equality
 # Returns list of pairs (tuples)
 def make_pairs(left, right, get_key):
     left_keys = map(get_key, left)
@@ -24,18 +25,30 @@ def make_pairs(left, right, get_key):
     return pairs
 
 
+# High-level readable function to join two sets of UIDs
 def match_workers_to_shifts(worker_slots, shift_slots):
+    # Join by portion of UID (number) representing a time of day
     pairs = make_pairs(worker_slots, shift_slots,
         lambda slot: slot % ScheduleInterpreter.ID_OFFSET)
 
     return pairs
 
+def save_matchings_to_file(matchings, all_combined, value_map, output_file_name):
+    output_file = open(output_file_name, 'w')
+    # Start file formatting for graph solver
+    # First two lines will be #Vertices and #Edges
+    output_data = [str(len(all_combined)), str(len(matchings))]
+    # Followed by lines of x y 0, i.e. the vertices of edge and its weight
+    output_data += ["%s %s 0" % (value_map[m[0]], value_map[m[1]])
+            for m in matchings]
+    output_file.write('\n'.join(output_data))
+    # End file formatting
+    output_file.close()
 
 def main():
     file = open('docs/xuMakerSpringAvailability.txt','r')
-    print(file)
-    schedules = json.loads(file.read())
-    all_day_every_day = {
+    worker_availability = json.loads(file.read())
+    worker1_shifts = worker2_shifts = {
         'M': '10:00-17:00',
         'T': '10:00-17:00',
         'W': '10:00-17:00',
@@ -45,24 +58,39 @@ def main():
         'U': '10:00-17:00'
     }
 
+    # Convert given schedules into UIDs to be matched by shared time
     scheduler = ScheduleInterpreter()
-    w_slots = scheduler.generate_shifts(ScheduleInterpreter.TYPE_WORKER, *schedules)
-    s_slots = scheduler.generate_shifts(ScheduleInterpreter.TYPE_SHIFT, \
-        all_day_every_day, all_day_every_day)
-
-    pairs = match_workers_to_shifts(w_slots, s_slots)
-
+    workers = ScheduleInterpreter.TYPE_WORKER
+    shifts = ScheduleInterpreter.TYPE_SHIFT
+    w_slots = scheduler.generate_shifts(workers, *worker_availability)
+    s_slots = scheduler.generate_shifts(shifts, worker1_shifts, worker2_shifts)
     # Because our bipartite matcher requires sequential vertices
     # We sort all slots and index them to map their values to their indices
-    all_slots = sorted(s_slots + w_slots)
+    all_slots = sorted(all_left + all_right)
     value_map = dict(zip(all_slots, range(len(all_slots))))
 
-    output_file = open('bipartite_graph_description.txt', 'w')
-    print(len(all_slots))
-    print(len(pairs))
+    # Generate "edges" in a description of a bipartite graph
+    pairs = match_workers_to_shifts(w_slots, s_slots)
+    save_matchings_to_file(pairs, all_slots, value_map './docs/graph')
 
-    for p in pairs:
-        print("%s %s 0" % (value_map[p[0]], value_map[p[1]]))
+    # Use graph theory to find best shift coverage with "Job Matching" problem
+    solver_args = ['-f', './docs/graph', '--max']
+    solver_output = check_output(['./match_bipartite_graph'] + solver_args).split('\n')
+
+    # Convert "solved" graph's matchings (chosen edges) into
+    # Readable shifts for (TODO:calendar_feature and) a table for managers
+    tmp_index = solver_output[0].find(':')
+    num_edges = int( solver_output[0][tmp_index + len(" "):])
+    starting_line = 2
+    matched_edges = solver_output[starting_line:starting_line + num_edges]
+
+    # Revert graph vertices to slots as UIDs
+    reverse_map = dict(zip(value_map.values(), value_map.keys()))
+    matched_shifts = [(reverse_map[me[0]], reverse_map[me[1]]) \
+            for me in matched_edges]
+
+    # TODO: Find the bug that causes an empty line to be in output
+    table = scheduler.create_master_schedule(matched_shifts)
 
 
 if __name__ == '__main__':
