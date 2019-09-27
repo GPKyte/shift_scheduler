@@ -20,6 +20,8 @@ class ScheduleInterpreter():
     TYPE_WORKER  = 2
     TYPE_SHIFT   = 1
     FIRST_SHIFT  = '10:00'
+    LAST_SHIFT   = '17:00'
+    DOW          = 'MTWRFSU'
 
     TYPE_OFFSET  = 10000000
     ID_OFFSET    =   100000
@@ -52,12 +54,11 @@ class ScheduleInterpreter():
     #
     # Creating UID which expresses info like weekday + time
     def flatten_time_ranges(self, work_hours):
-        DOW = 'MTWRFSU'
         day_id = 0
         flat = []
 
         # TODO: decrease indentation, yikes.
-        for day in DOW:
+        for day in self.DOW:
             ranges = []
             todays_slots = []
 
@@ -86,8 +87,75 @@ class ScheduleInterpreter():
     # But there's a catch, some or all days have n >= 2 shifts
     # i.e. multiple employees are scheduled to cover each day
     # and this needs clear representation in the table
-    def create_master_schedule(self):
-        pass
+    #
+    # Given list of UID pairs, create table
+    # Where workers' UID are in each cell and indexed by matching shift UID
+    # Pairs are necessary only because of concurrent employees
+    def create_master_schedule(self, assigned_shifts):
+        WORKER_UID = 0
+        SHIFT_UID = 1
+        # This will become easiest if will assume there is room for n shifts
+        # in every possible time slot. Once we find n, we simply create a
+        # 2d table with appropriate headers and lack of matched shifts
+        # will take care of any discrepancies from this assumption
+
+        # Find n # of shifts by relying on information in UID
+        # Because ID is one order higher than time and DOW,
+        # Max UID will give the number of shifts concurrently scheduled
+        last_shift = int(max([s[SHIFT_UID] for s in assigned_shifts]))
+        num_concurrent_shifts = self.get_ID(last_shift)
+
+        # Create headers
+        headers = []
+        for day in self.DOW:
+            for x in range(1, num_concurrent_shifts + 1):
+                headers.append(day + str(x))
+
+        # What's the table size?
+        # Well, as for columns we have N * DOW
+        # and for shifts we have 24 hr * 60 min/hr / 15 min/interval
+        # But more precisely, we have as many DOW as needed (<=7)
+        # And we only have time slots between the first and last shift
+        max_daily_shifts = len(create_time_slots(self.FIRST_SHIFT, self.LAST_SHIFT))
+        total_weekly_coverage = len(self.DOW) * num_concurrent_shifts
+
+        # Because we will join as CSV most-likely
+        # create a column by row table (choose row then column)!!!!!!!!!!!!!!
+        # Note: BC table is small, performance gains from locality negligible
+        table = [[None] * total_weekly_coverage] * max_daily_shifts
+
+        # TODO: Better yet, make one function call and return the indices appended to data
+        for assignment in assigned_shifts:
+            column, row = generate_index(assignment[SHIFT_UID])
+            table[row][column] = assignment[WORKER_UID] # Note the ordering!!
+
+        master = headers + table
+
+        return master
+
+    def generate_index(self, slot_UID):
+        x = self.get_DOW(slot_UID) + self.get_ID(slot_UID) # DOW
+        y = self.get_time_of_day(slot_UID) // self.SHIFT_LENGTH # Time Slot
+        return (x,y)
+
+    # Series of UID-specific helper functions to avoid duplication and error
+    # UID format: T##DMMMM, note that int is required input
+    def get_time_of_day(self, slot_UID):
+        # '2005ABCD' -> ABCD
+        return (slot_UID % self.DOW_OFFSET)
+
+    def get_DOW(self, slot_UID):
+        # '101A1015' -> A
+        return (slot_UID % self.ID_OFFSET // self.DOW_OFFSET)
+
+    def get_ID(self, slot_UID):
+        # '1AB31015' -> AB
+        return (slot_UID % self.TYPE_OFFSET // self.ID_OFFSET)
+
+    def get_type(self, slot_UID):
+        # 'A0911015' -> A
+        return (slot_UID // self.TYPE_OFFSET)
+    # End series of GET UID-info helpers
 
     def combine_adjacent_slots(self):
         pass
