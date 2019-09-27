@@ -103,39 +103,52 @@ class ScheduleInterpreter():
         # Because ID is one order higher than time and DOW,
         # Max UID will give the number of shifts concurrently scheduled
         last_shift = int(max([s[SHIFT_UID] for s in assigned_shifts]))
-        num_concurrent_shifts = self.get_ID(last_shift)
+        num_concurrent_shifts = self.get_ID(last_shift) + 1 # 0-indexed ID
 
         # Create headers
         headers = []
         for day in self.DOW:
             for x in range(1, num_concurrent_shifts + 1):
-                headers.append(day + str(x))
+                suffix = str(x) if num_concurrent_shifts > 1 else ''
+                headers.append(day + suffix)
 
         # What's the table size?
         # Well, as for columns we have N * DOW
         # and for shifts we have 24 hr * 60 min/hr / 15 min/interval
         # But more precisely, we have as many DOW as needed (<=7)
         # And we only have time slots between the first and last shift
-        max_daily_shifts = len(create_time_slots(self.FIRST_SHIFT, self.LAST_SHIFT))
-        total_weekly_coverage = len(self.DOW) * num_concurrent_shifts
+        max_daily_shifts = range(len(self.create_time_slots(
+                self.FIRST_SHIFT, self.LAST_SHIFT)))
+        total_weekly_coverage = range(len(self.DOW) * num_concurrent_shifts)
 
         # Because we will join as CSV most-likely
         # create a column by row table (choose row then column)!!!!!!!!!!!!!!
         # Note: BC table is small, performance gains from locality negligible
-        table = [[None] * total_weekly_coverage] * max_daily_shifts
+        table = [[None for col in total_weekly_coverage] for row in max_daily_shifts]
 
         # TODO: Better yet, make one function call and return the indices appended to data
         for assignment in assigned_shifts:
-            column, row = generate_index(assignment[SHIFT_UID])
-            table[row][column] = assignment[WORKER_UID] # Note the ordering!!
+            column, row = self.generate_index(assignment[SHIFT_UID])
 
-        master = headers + table
+            try:
+                table[row][column] = assignment[WORKER_UID] # Note the ordering!!
+            except IndexError as ie:
+                print("Cell at Row: %s, Column: %s is not in range:") % (row, column)
+                print("Value %s, Table:\n %s") % (assignment[WORKER_UID], table)
+                raise ie
+
+
+        master = [headers] + table # headers must be list to append row to top
 
         return master
 
+    # Assuming little to no validation on this method because of limited use
+    # and purpose of simple abstraction with high coupling.
     def generate_index(self, slot_UID):
-        x = self.get_DOW(slot_UID) + self.get_ID(slot_UID) # DOW
-        y = self.get_time_of_day(slot_UID) // self.SHIFT_LENGTH # Time Slot
+        y_offset = self.text_to_minutes(self.FIRST_SHIFT)
+        x = self.get_DOW(slot_UID) + self.get_ID(slot_UID)
+        y = (self.get_time_of_day(slot_UID) - y_offset) // self.SHIFT_LENGTH
+
         return (x,y)
 
     # Series of UID-specific helper functions to avoid duplication and error

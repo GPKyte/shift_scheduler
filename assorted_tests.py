@@ -9,6 +9,7 @@ def main():
     tester.test_week_hours_to_slots()
     tester.test_timecheck()
     tester.test_join_lists()
+    tester.test_generate_master_schedule()
 
 class TestMachine():
     ben_avail = {
@@ -58,6 +59,49 @@ class TestMachine():
                 assert(test_cases[test] == checked)
             except AssertionError:
                 print("%s -> %s != %s" % (test, test_cases[test], checked))
+
+    def test_generate_master_schedule(self):
+        worker_UID = 10100600 # Worker 2 at 10:00 Monday
+        shift_UID = 20000600 # Shift 1 at 10:00 Monday
+        daily_slots = 28
+        table = \
+            [['M', 'T', 'W', 'R', 'F', 'S', 'U'],
+            [10100600, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None]] # 7 by 28
+
+        table[1][0] = worker_UID
+
+        master = self.scheduler.create_master_schedule([(worker_UID, shift_UID)])
+        try:
+            assert(master == table)
+        except AssertionError:
+            print(master)
 
 
     def test_generate_shifts(self):

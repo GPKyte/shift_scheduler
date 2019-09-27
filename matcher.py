@@ -71,7 +71,7 @@ def main():
 
     # Generate "edges" in a description of a bipartite graph
     pairs = match_workers_to_shifts(w_slots, s_slots)
-    save_matchings_to_file(pairs, all_slots, value_map './docs/graph')
+    save_matchings_to_file(pairs, all_slots, value_map, './docs/graph')
 
     # Use graph theory to find best shift coverage with "Job Matching" problem
     solver_args = ['-f', './docs/graph', '--max']
