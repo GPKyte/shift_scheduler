@@ -24,6 +24,24 @@ def make_pairs(left, right, get_key):
 
     return pairs
 
+def reverse_keys_and_values(mapping):
+    new_map = {}
+
+    for key in mapping.keys():
+        value = mapping[key]
+        new_map[value] = key
+
+    return new_map
+
+# Assume ROW-MAJOR table!
+def as_CSV(table):
+    string_table = []
+    for each_row in table:
+        string_table.append(
+            map(lambda entry: str(entry), each_row))
+
+    rows = [','.join(row) for row in string_table]
+    return ('\n'.join(rows))
 
 # High-level readable function to join two sets of UIDs
 def match_workers_to_shifts(worker_slots, shift_slots):
@@ -66,7 +84,7 @@ def main():
     s_slots = scheduler.generate_shifts(shifts, worker1_shifts, worker2_shifts)
     # Because our bipartite matcher requires sequential vertices
     # We sort all slots and index them to map their values to their indices
-    all_slots = sorted(all_left + all_right)
+    all_slots = sorted(w_slots + s_slots)
     value_map = dict(zip(all_slots, range(len(all_slots))))
 
     # Generate "edges" in a description of a bipartite graph
@@ -82,15 +100,26 @@ def main():
     tmp_index = solver_output[0].find(':')
     num_edges = int( solver_output[0][tmp_index + len(" "):])
     starting_line = 2
-    matched_edges = solver_output[starting_line:starting_line + num_edges]
+
+    # This is a list of string lines with 2 numbers separated by a space
+    num_pairs = solver_output[starting_line:starting_line + num_edges]
+    str_matched_edges = [pair.split(' ') for pair in num_pairs]
+    matched_edges = map(
+        lambda pair: (int(pair[0]), int(pair[1])),
+        str_matched_edges)
 
     # Revert graph vertices to slots as UIDs
-    reverse_map = dict(zip(value_map.values(), value_map.keys()))
-    matched_shifts = [(reverse_map[me[0]], reverse_map[me[1]]) \
+    reverse_map = reverse_keys_and_values(value_map)
+    try:
+        matched_shifts = [(reverse_map[me[0]], reverse_map[me[1]]) \
             for me in matched_edges]
+    except KeyError as ke:
+        print("The value, %s, does not map to a UID" % (me))
+        raise ke
 
     # TODO: Find the bug that causes an empty line to be in output
     table = scheduler.create_master_schedule(matched_shifts)
+    print(as_CSV(table))
 
 
 if __name__ == '__main__':

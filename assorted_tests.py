@@ -10,6 +10,7 @@ def main():
     tester.test_timecheck()
     tester.test_join_lists()
     tester.test_generate_master_schedule()
+    tester.test_print_table_as_csv()
 
 class TestMachine():
     ben_avail = {
@@ -102,6 +103,24 @@ class TestMachine():
             assert(master == table)
         except AssertionError:
             print(master)
+
+    def test_print_table_as_csv(self):
+        row_major_table = \
+            [['M', 'T', 'W', 'R', 'F', 'S', 'U'],
+            [10100600, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None]]
+        table = as_CSV(row_major_table)
+
+        goal = """M,T,W,R,F,S,U
+10100600,None,None,None,None,None,None
+None,None,None,None,None,None,None
+None,None,None,None,None,None,None"""
+
+        try:
+            assert(table == goal)
+        except AssertionError:
+            print(table)
 
 
     def test_generate_shifts(self):
