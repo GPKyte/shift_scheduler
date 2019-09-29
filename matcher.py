@@ -76,6 +76,7 @@ def main():
         'U': '10:00-17:00'
     }
 
+    ### CREATE SHIFTS ###
     # Convert given schedules into UIDs to be matched by shared time
     scheduler = ScheduleInterpreter()
     workers = ScheduleInterpreter.TYPE_WORKER
@@ -87,6 +88,7 @@ def main():
     all_slots = sorted(w_slots + s_slots)
     value_map = dict(zip(all_slots, range(len(all_slots))))
 
+    ### ASSIGN SHIFTS ###
     # Generate "edges" in a description of a bipartite graph
     pairs = match_workers_to_shifts(w_slots, s_slots)
     save_matchings_to_file(pairs, all_slots, value_map, './docs/graph')
@@ -95,6 +97,7 @@ def main():
     solver_args = ['-f', './docs/graph', '--max']
     solver_output = check_output(['./match_bipartite_graph'] + solver_args).split('\n')
 
+    ### READ SCHEDULE ###
     # Convert "solved" graph's matchings (chosen edges) into
     # Readable shifts for (TODO:calendar_feature and) a table for managers
     tmp_index = solver_output[0].find(':')
@@ -104,7 +107,7 @@ def main():
     # This is a list of string lines with 2 numbers separated by a space
     num_pairs = solver_output[starting_line:starting_line + num_edges]
     str_matched_edges = [pair.split(' ') for pair in num_pairs]
-    matched_edges = map(
+    matched_edges = map( # need integers in table
         lambda pair: (int(pair[0]), int(pair[1])),
         str_matched_edges)
 
@@ -117,10 +120,17 @@ def main():
         print("The value, %s, does not map to a UID" % (me))
         raise ke
 
-    # TODO: Find the bug that causes an empty line to be in output
-    table = scheduler.create_master_schedule(matched_shifts)
-    print(as_CSV(table))
+    # Map ids in UIDs to worker names
+    ID_schedules = scheduler.assign_id(worker_availability)
+    name_id_pairs = [(w, ID_schedules[w]['Name']) for w in ID_schedules.keys()]
+    ID_names = dict(name_id_pairs)
 
+    # TODO: Find the bug that causes an empty line to be in output
+    table = scheduler.create_master_schedule(matched_shifts, ID_names)
+
+    output_file = open('new_schedule.csv', 'w')
+    output_file.write(as_CSV(table))
+    output_file.close()
 
 if __name__ == '__main__':
     main()

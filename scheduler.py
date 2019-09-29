@@ -37,16 +37,23 @@ class ScheduleInterpreter():
         if len(schedules) > 99 or type_id > 9:
             raise ValueError
 
-        schedule_id = 0
         shifts = []
+        named_schedules = self.assign_id(schedules)
 
-        for this_schedule in schedules:
+        for schedule_id in named_schedules.keys():
+            this_schedule = named_schedules[schedule_id]
             slots = self.flatten_time_ranges(this_schedule)
             prefix = type_id * self.TYPE_OFFSET + schedule_id * self.ID_OFFSET
             shifts += [prefix + shift for shift in slots]
-            schedule_id += 1
 
         return shifts
+
+    def assign_id(self, schedules):
+        return self.index_elements(*schedules)
+
+    def index_elements(self, *args):
+        keys = range(len(args))
+        return dict(zip(keys, args))
 
     # Take set of time ranges in human readable format
     # and return list of ranges in integer format
@@ -91,7 +98,7 @@ class ScheduleInterpreter():
     # Given list of UID pairs, create table
     # Where workers' UID are in each cell and indexed by matching shift UID
     # Pairs are necessary only because of concurrent employees
-    def create_master_schedule(self, assigned_shifts):
+    def create_master_schedule(self, assigned_shifts, worker_names=None):
         WORKER_UID = 0
         SHIFT_UID = 1
         # This will become easiest if will assume there is room for n shifts
@@ -109,7 +116,7 @@ class ScheduleInterpreter():
         headers = []
         for day in self.DOW:
             for x in range(1, num_concurrent_shifts + 1):
-                suffix = str(x) if num_concurrent_shifts > 1 else ''
+                suffix = str(x) if x > 1 else ''
                 headers.append(day + suffix)
 
         # What's the table size?
@@ -129,9 +136,10 @@ class ScheduleInterpreter():
         # TODO: Better yet, make one function call and return the indices appended to data
         for assignment in assigned_shifts:
             column, row = self.generate_index(assignment[SHIFT_UID])
+            value = worker_names.get(self.get_ID(assignment[WORKER_UID]), assignment[WORKER_UID])
 
             try:
-                table[row][column] = assignment[WORKER_UID] # Note the ordering!!
+                table[row][column] = value # Note the ordering!!
             except IndexError as ie:
                 print("Cell at Row: %s, Column: %s is not in range:") % (row, column)
                 print("Value %s, Table:\n %s") % (assignment[WORKER_UID], table)
