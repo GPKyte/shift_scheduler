@@ -11,13 +11,39 @@ def main():
     tester.test_join_lists()
     tester.test_generate_master_schedule()
     tester.test_print_table_as_csv()
+    tester.test_create_best_schedule()
 
 class TestMachine():
+    all_day = '10:00-17:00'
+    avail_M = {
+        'Name': 'A',
+        'Hours': '1',
+        'M': all_day,
+    }
+    avail_T = {
+        'Name': 'B',
+        'Hours': '2',
+        'T': all_day,
+    }
+    avail_WTF = {
+        'Name': 'C',
+        'Hours': '1',
+        'W': all_day,
+        'T': all_day,
+        'F': all_day
+    }
+    avail_USR = {
+        'Name': 'D',
+        'Hours': '1',
+        'S': all_day,
+        'U': all_day
+
+    }
     ben_avail = {
         'name': 'Ben S',
         'hours': '8',
         'M': '10:00-13:00, 13:00-17:00',
-        'T': '10:00-17:00',
+        'T': all_day,
         'W': '10:00-12:00, 13:00-17:00',
         'R': '10:00-13:00',
         'F': '10:00-12:00'
@@ -43,6 +69,12 @@ class TestMachine():
             print("Results: ", listAB)
             print("Goal: ", goal_pairs)
 
+    # An integrated test for expected schedule
+    def test_create_best_schedule(self):
+        #print(as_CSV(make_matching('docs/test_workers', 'docs/test_shifts')))
+        pass
+
+
     def test_timecheck(self):
         # hh, hh pm/am, hhpm/am, hh:mm, hh:mm pm/am, hh:mmpm/am
         test_cases = {
@@ -64,10 +96,19 @@ class TestMachine():
     def test_generate_master_schedule(self):
         worker_UID = 10100600 # Worker 2 at 10:00 Monday
         shift_UID = 20000600 # Shift 1 at 10:00 Monday
-        daily_slots = 28
+        shifts = [(10060990, 20060990),(10061005, 20061005)]
+
+        for slot in range(0,75,15):
+            shifts.append( (worker_UID + slot, shift_UID + slot) )
+
+        master = self.scheduler.create_master_schedule(shifts)
         table = \
             [['M', 'T', 'W', 'R', 'F', 'S', 'U'],
             [10100600, None, None, None, None, None, None],
+            [10100615, None, None, None, None, None, None],
+            [10100630, None, None, None, None, None, None],
+            [10100645, None, None, None, None, None, None],
+            [10100660, None, None, None, None, None, None],
             [None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None],
@@ -89,16 +130,9 @@ class TestMachine():
             [None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None]] # 7 by 28
+            [None, None, None, None, None, None, 10060990],
+            [None, None, None, None, None, None, 10061005]] # 7 by 28
 
-        table[1][0] = worker_UID
-
-        master = self.scheduler.create_master_schedule([(worker_UID, shift_UID)])
         try:
             assert(master == table)
         except AssertionError:
