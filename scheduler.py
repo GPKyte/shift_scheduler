@@ -119,13 +119,15 @@ class ScheduleInterpreter():
                 suffix = str(x) if x > 1 else ''
                 headers.append(day + suffix)
 
+        # TODO: Make a build table method?
+        # TODO: Clean these rambling comments
         # What's the table size?
         # Well, as for columns we have N * DOW
         # and for shifts we have 24 hr * 60 min/hr / 15 min/interval
         # But more precisely, we have as many DOW as needed (<=7)
         # And we only have time slots between the first and last shift
-        max_daily_shifts = range(len(self.create_time_slots(
-                self.FIRST_SHIFT, self.LAST_SHIFT)))
+        max_daily_shifts = range(len(
+            self.create_time_slots(self.FIRST_SHIFT, self.LAST_SHIFT)))
         total_weekly_coverage = range(len(self.DOW) * num_concurrent_shifts)
 
         # Because we will join as CSV most-likely
@@ -140,19 +142,31 @@ class ScheduleInterpreter():
 
         return master
 
-    def fill_table(table, index_value_tuples, value_mapping={}):
+    # Takes a sufficiently sized table
+    #   then plots values by their provided indices
+    #   while converting values based on given mapping if such mapping exists
+    # Returns same table address; this is a mutator function
+    def fill_table(self, table, index_value_tuples, value_mapping={}):
         for assignment in index_value_tuples:
-            column, row, value = assignment
-            default_value = value
-            value = worker_names.get(value, default_value)
+            column, row, key = assignment
+            default_value = key
+            cell_value = value_mapping.get(key, default_value)
 
             try:
-                table[row][column] = value # Note the ordering!!
+                table[row][column] = cell_value # Note the ordering of row and column!!!
             except IndexError as ie:
                 print("Cell at Row: %s, Column: %s is not in range:") % (row, column)
-                print("Value %s, Table:\n %s") % (value, table)
+                print("Value %s, Table:\n %s") % (cell_value, table)
                 raise ie
 
+        return table
+
+    # Generate index for each UID and Slot pair
+    # Location in final table is dependent upon:
+    #   Time of Day,    Day of week,    Concurrent employee #, and an
+    #       Offset in minutes from the start of the workday
+    # TODO: simplify table build by oversizing and parsing content later
+    # Return (x_index, y_index, UID) tuples
     def append_indices_to_values(self, *value_location_pairs):
         SHIFT_UID = self.TYPE_SHIFT - 1
         WORKER_UID = self.TYPE_WORKER - 1
@@ -167,6 +181,7 @@ class ScheduleInterpreter():
 
         return indices
 
+    # DEPRECATED
     # Assuming little to no validation on this method because of limited use
     # and purpose of simple abstraction with high coupling.
     def generate_index(self, slot_UID):
