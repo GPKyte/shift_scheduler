@@ -98,7 +98,7 @@ class ScheduleInterpreter():
     # Given list of UID pairs, create table
     # Where workers' UID are in each cell and indexed by matching shift UID
     # Pairs are necessary only because of concurrent employees
-    def create_master_schedule(self, assigned_shifts, worker_names=None):
+    def create_master_schedule(self, assigned_shifts, worker_names={}):
         WORKER_UID = 0
         SHIFT_UID = 1
         # This will become easiest if will assume there is room for n shifts
@@ -134,30 +134,43 @@ class ScheduleInterpreter():
         table = [[None for col in total_weekly_coverage] for row in max_daily_shifts]
 
         # TODO: Better yet, make one function call and return the indices appended to data
-        for assignment in assigned_shifts:
-            column, row = self.generate_index(assignment[SHIFT_UID])
-            value = worker_names.get(self.get_ID(assignment[WORKER_UID]), assignment[WORKER_UID])
+        indices = self.append_indices_to_values(*assigned_shifts)
+        table = self.fill_table(table, indices)
+        master = [headers] + table # headers must be list to append row to top
+
+        return master
+
+    def fill_table(table, index_value_tuples, value_mapping={}):
+        for assignment in index_value_tuples:
+            column, row, value = assignment
+            default_value = value
+            value = worker_names.get(value, default_value)
 
             try:
                 table[row][column] = value # Note the ordering!!
             except IndexError as ie:
                 print("Cell at Row: %s, Column: %s is not in range:") % (row, column)
-                print("Value %s, Table:\n %s") % (assignment[WORKER_UID], table)
+                print("Value %s, Table:\n %s") % (value, table)
                 raise ie
 
+    def append_indices_to_values(self, *value_location_pairs):
+        SHIFT_UID = self.TYPE_SHIFT - 1
+        WORKER_UID = self.TYPE_WORKER - 1
+        y_offset = self.text_to_minutes(self.FIRST_SHIFT)
+        indices = []
 
-        master = [headers] + table # headers must be list to append row to top
+        for pair in value_location_pairs:
+            slot_UID = pair[SHIFT_UID]
+            x = self.get_DOW(slot_UID) + self.get_ID(slot_UID)
+            y = (self.get_time_of_day(slot_UID) - y_offset) // self.SHIFT_LENGTH
+            indices.append( (x, y, pair[WORKER_UID]) )
 
-        return master
+        return indices
 
     # Assuming little to no validation on this method because of limited use
     # and purpose of simple abstraction with high coupling.
     def generate_index(self, slot_UID):
-        y_offset = self.text_to_minutes(self.FIRST_SHIFT)
-        x = self.get_DOW(slot_UID) + self.get_ID(slot_UID)
-        y = (self.get_time_of_day(slot_UID) - y_offset) // self.SHIFT_LENGTH
-
-        return (x,y)
+        return self.append_indices_to_values((0, slot_UID))[0]
 
     # Series of UID-specific helper functions to avoid duplication and error
     # UID format: T##DMMMM, note that int is required input
