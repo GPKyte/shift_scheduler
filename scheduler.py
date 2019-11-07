@@ -137,7 +137,7 @@ class ScheduleInterpreter():
 
         # TODO: Better yet, make one function call and return the indices appended to data
         indices = self.append_indices_to_values(num_concurrent_shifts, *assigned_shifts)
-        table = self.fill_table(table, indices)
+        table = self.fill_table(table, indices, worker_names)
         master = [headers] + table # headers must be list to append row to top
 
         return master
@@ -148,8 +148,8 @@ class ScheduleInterpreter():
     # Returns same table address; this is a mutator function
     def fill_table(self, table, index_value_tuples, value_mapping={}):
         for assignment in index_value_tuples:
-            column, row, key = assignment
-            default_value = key
+            column, row, default_value = assignment
+            key = self.get_ID(default_value)
             cell_value = value_mapping.get(key, default_value)
 
             try:
@@ -170,13 +170,11 @@ class ScheduleInterpreter():
     def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
         SHIFT_UID = self.TYPE_SHIFT - 1
         WORKER_UID = self.TYPE_WORKER - 1
-
         y_offset = self.text_to_minutes(self.FIRST_SHIFT)
         indices = []
 
         for pair in value_location_pairs:
             slot_UID = pair[SHIFT_UID]
-            # TODO: Pass max number of concurrent employees
             x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
             y = (self.get_time_of_day(slot_UID) - y_offset) // self.SHIFT_LENGTH
             indices.append( (x, y, pair[WORKER_UID]) )

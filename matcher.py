@@ -90,6 +90,8 @@ def parse_graph_solution(solver_output):
 def make_matching(availability_file):
     file = open(availability_file,'r')
     worker_availability = json.loads(file.read())
+    # Each time I see this I think about a quick concise generator,
+    # but what if the content changes for only some days? So keep it simple
     worker1_shifts = worker2_shifts = {
         'M': '10:00-17:00',
         'T': '10:00-17:00',
