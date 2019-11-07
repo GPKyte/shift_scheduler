@@ -17,8 +17,8 @@
 
 class ScheduleInterpreter():
     SHIFT_LENGTH = 15
-    TYPE_WORKER  = 2
-    TYPE_SHIFT   = 1
+    TYPE_WORKER  = 1
+    TYPE_SHIFT   = 2
     FIRST_SHIFT  = '10:00'
     LAST_SHIFT   = '17:00'
     DOW          = 'MTWRFSU'
@@ -136,7 +136,7 @@ class ScheduleInterpreter():
         table = [[None for col in total_weekly_coverage] for row in max_daily_shifts]
 
         # TODO: Better yet, make one function call and return the indices appended to data
-        indices = self.append_indices_to_values(*assigned_shifts)
+        indices = self.append_indices_to_values(num_concurrent_shifts, *assigned_shifts)
         table = self.fill_table(table, indices)
         master = [headers] + table # headers must be list to append row to top
 
@@ -167,15 +167,17 @@ class ScheduleInterpreter():
     #       Offset in minutes from the start of the workday
     # TODO: simplify table build by oversizing and parsing content later
     # Return (x_index, y_index, UID) tuples
-    def append_indices_to_values(self, *value_location_pairs):
+    def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
         SHIFT_UID = self.TYPE_SHIFT - 1
         WORKER_UID = self.TYPE_WORKER - 1
+
         y_offset = self.text_to_minutes(self.FIRST_SHIFT)
         indices = []
 
         for pair in value_location_pairs:
             slot_UID = pair[SHIFT_UID]
-            x = self.get_DOW(slot_UID) + self.get_ID(slot_UID)
+            # TODO: Pass max number of concurrent employees
+            x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
             y = (self.get_time_of_day(slot_UID) - y_offset) // self.SHIFT_LENGTH
             indices.append( (x, y, pair[WORKER_UID]) )
 
