@@ -61,7 +61,7 @@ class TestMachine():
     def test_join_lists(self):
         listA = range(0, 100)
         listB = range(0, 100, 5)
-        listAB = make_pairs(listA, listB, lambda x: x)
+        listAB = match_pairs(listA, listB, lambda x: x)
         goal_pairs = [(a, a) for a in range(0, 100, 5)]
 
         try:

@@ -1,7 +1,15 @@
-# BREAK DOWN MAIN METHOD FOR TESTING
-
-# This file will take in schedule information
-# then match open shifts to available work hours
+# MATCHER.PY
+#
+# This package works as a unit to interpret employee schedules
+# Towards the end of assigning them shifts that provide maximum
+# coverage of all work hours
+#
+# This is admittedly brittle as some assumptions that work for
+# the client have been hard-coded as simplifications in this version.
+# 
+# This problem is reduced to Bipartite Graphs & Job Matching,
+# This is done at a "slot" based level. Look into SCHEDULER.PY
+# for more information on time range interpretation of availabilities
 from scheduler import ScheduleInterpreter
 from subprocess import check_output
 import json
@@ -9,7 +17,7 @@ import json
 # Given two collections and a lambda to retrieve key
 # Make pairs of all matches using psuedo hash-join on equality
 # Returns list of pairs (tuples)
-def make_pairs(left, right, get_key):
+def match_pairs(left, right, get_key):
     left_keys = map(get_key, left)
     right_keys = map(get_key, right)
 
@@ -27,6 +35,8 @@ def make_pairs(left, right, get_key):
     return pairs
 
 
+# Functional method to reverse direction of dictionary
+# Probably not efficient, oh well. Not intended for large maps
 def reverse_keys_and_values(mapping):
     new_map = {}
 
@@ -37,62 +47,74 @@ def reverse_keys_and_values(mapping):
     return new_map
 
 
-# Assume ROW-MAJOR table!
+# Using ROW-MAJOR table!!!!
+# That means TABLE[ROW][COLUMN] = cell
 def as_CSV(table):
-    string_table = []
+    str_table = []
+
+    # TODO: Consider simplifying to remove this for loop?
     for each_row in table:
-        string_table.append(
+        str_table.append(
             map(lambda entry: str(entry), each_row))
 
-    rows = [','.join(row) for row in string_table]
+    rows = [','.join(row) for row in str_table]
     return ('\n'.join(rows))
 
 
 # High-level readable function to join two sets of UIDs
+# RETURN matched UIDs as 2-tuples
 def match_workers_to_shifts(worker_slots, shift_slots):
-    # Join by portion of UID (number) representing a time of day
-    pairs = make_pairs(worker_slots, shift_slots,
-        lambda slot: slot % ScheduleInterpreter.ID_OFFSET)
+    # Matching edges by Time of Day
+    # TODO: debate senselessly about wasted function calls to .get_TOD()
+    pairs = match_pairs(worker_slots, shift_slots,
+        lambda slot: ScheduleInterpreter.get_TOD(slot))
 
     return pairs
 
 
-def save_matchings_to_file(matchings, all_combined, value_map, output_file_name):
-    output_file = open(output_file_name, 'w')
-    # Start file formatting for graph solver
+# Pretty cut and dry method here to save file in format solver expects
+# value_map: converts UIDs to indexed sequential vertices in graph
+# TODO: Change weight (third number currently 0) of edges to favor long shifts
+def save_data_for_solver(edges, num_vertices, value_map, output_file_name):
     # First two lines will be #Vertices and #Edges
-    output_data = [str(len(all_combined)), str(len(matchings))]
-    # Followed by lines of x y 0, i.e. the vertices of edge and its weight
-    output_data += ["%s %s 0" % (value_map[m[0]], value_map[m[1]])
-            for m in matchings]
+    # Followed by lines looking like x y 0
+    # And edge is referenced by a pair of vertices and given some weight
+    output_data = [str(num_vertices), str(len(edges))]
+    output_data += ["%s %s 0" % (value_map[e[0]], value_map[e[1]])
+        for e in edges]
+
+    output_file = open(output_file_name, 'w')
     output_file.write('\n'.join(output_data))
-    # End file formatting
     output_file.close()
 
 
+# Designed specifically parsing the output of an Bipartite Graph match solver
+# Solver output is a collection of lines
+# RETURN set of edges remaining in subgraph as list of 2-tuples
 def parse_graph_solution(solver_output):
-        # Convert solved graph's matchings (chosen edges) into
-        # Readable shifts for (TODO:calendar_feature and) a table for managers
-        tmp_index = solver_output[0].find(':')
-        num_edges = int( solver_output[0][tmp_index + len(" "):])
-        starting_line = 2
+        just_some_index = solver_output[0].find(':')
+        num_edges_in_result = int( solver_output[0][just_some_index + len(" "):])
+        start = 2 # Known from looking at output, completely a magic number
 
         # This is a list of string lines with 2 numbers separated by a space
-        pairs = solver_output[starting_line:starting_line + num_edges]
+        pairs = solver_output[start:start + num_edges_in_result]
         str_matched_edges = [pair.split(' ') for pair in pairs]
-        matched_edges = map( # need integers in table
+        matched_edges = map( # to integers for table
             lambda pair: (int(pair[0]), int(pair[1])),
             str_matched_edges)
 
-        return matched_edges
+        return(matched_edges)
 
 
+# The I/O high-level director of this program sourcing data and writing it back
 def make_matching(availability_file):
-    file = open(availability_file,'r')
+    file = open(availability_file, 'r')
     worker_availability = json.loads(file.read())
-    # Each time I see this I think about a quick concise generator,
-    # but what if the content changes for only some days? So keep it simple
+    file.close()
+
     worker1_shifts = worker2_shifts = {
+        # Each time I see this I think about a quick concise generator,
+        # but what if the content changes for only some days? So keep it simple
         'M': '10:00-17:00',
         'T': '10:00-17:00',
         'W': '10:00-17:00',
@@ -102,22 +124,21 @@ def make_matching(availability_file):
         'U': '10:00-17:00'
     }
 
-    ### CREATE SHIFTS ###
     # Convert given schedules into UIDs to be matched by shared time
     scheduler = ScheduleInterpreter()
     workers = ScheduleInterpreter.TYPE_WORKER
-    shifts = ScheduleInterpreter.TYPE_SHIFT
+    shifts  = ScheduleInterpreter.TYPE_SHIFT
     w_slots = scheduler.generate_shifts(workers, *worker_availability)
     s_slots = scheduler.generate_shifts(shifts, worker1_shifts, worker2_shifts)
 
-    assignments = assign_shifts(w_slots, s_slots)
-
+    # TODO: Get input on where to keep responsibility of ID, clean code smell
     # Map ids in UIDs to worker names
     ID_schedules = scheduler.assign_id(worker_availability)
     name_id_pairs = [(w, ID_schedules[w]['Name']) for w in ID_schedules.keys()]
     ID_names = dict(name_id_pairs)
 
     # TODO: Find the bug that causes an empty line to be in output
+    assignments = assign_shifts(w_slots, s_slots)
     table = scheduler.create_master_schedule(assignments, ID_names)
 
     output_file = open('new_schedule.csv', 'w')
@@ -127,36 +148,40 @@ def make_matching(availability_file):
     return(table)
  
 
-# Using a graph theory solution to job matching, assign shifts by
-# treating each matched shift (a shift that a worker can fulfill)
-# as an edge between worker and shift. This creates a bipartite graph
+# Take two sets of all unique slots that can be matched
+# By an equality of Time of Day stored in the UID of each slot
+# The method reduces the problem to Job Matching in Graph Theory
+# by treating each set of slots as partitions in a bipartite graph
+# RETURNS a set of 2-tuples that represent the assignment of an
+#   employee to a INTERVAL-sized shift, aka slot.
 def assign_shifts(w_slots, s_slots):
     # Because our bipartite matcher requires sequential vertices
-    # We sort all slots and index them to map their values to their indices
+    # We sort and index all slots to map them to vertices and recover them
     all_slots = sorted(w_slots + s_slots)
     value_map = dict(zip(all_slots, range(len(all_slots))))
 
     # Generate "edges" in a description of a bipartite graph
     matchings = match_workers_to_shifts(w_slots, s_slots)
-    save_matchings_to_file(matchings, all_slots, value_map, './docs/graph')
+    save_data_for_solver(matchings, len(all_slots), value_map, './docs/graph')
+    # Don't worry about leaving file behind (don't waste energy by deleting it)
 
-    # Use graph theory to find best shift coverage with "Job Matching" problem
-    solver_args = ['-f', './docs/graph', '--max']
-    solver_output = check_output(['./match_bipartite_graph'] + solver_args).split('\n')
-    selected_edges = parse_graph_solution(solver_output)
+    # Solve Job Matching problem
+    solver_args = ['./match_bipartite_graph', '-f', './docs/graph', '--max']
+    solver_output = check_output(solver_args).split('\n')
+    edge_set = parse_graph_solution(solver_output)
 
-    # Revert graph vertices to slots as UIDs
-    reverse_map = reverse_keys_and_values(value_map)
-    try:
-        assigned_shifts = [(reverse_map[se[0]], reverse_map[se[1]]) \
-            for se in selected_edges]
+    try: # Revert graph vertices to slots as UIDs
+        recover = reverse_keys_and_values(value_map)
+        assignments = [(recover[e[0]], recover[e[1]]) for e in edge_set]
+
     except KeyError as ke:
         print("The value, %s, does not map to a UID" % (se))
         raise ke
 
-    return(assigned_shifts)
+    return(assignments)
 
-
+# TODO: (Feature) Calendar integration with results
+# TODO: Polymorphism of UIDs
 def main():
     make_matching('docs/xuMakerSpringAvailability.txt')
 

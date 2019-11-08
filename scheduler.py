@@ -34,23 +34,28 @@ class ScheduleInterpreter():
     #   D = Day of the week
     #   M = Minutes from 0-1439 (24 * 60 - 1) of given day
     def generate_shifts(self, type_id, *schedules):
+        # Enforce Data integrity of UID with simple check
         if len(schedules) > 99 or type_id > 9:
             raise ValueError
 
         shifts = []
+        # TODO: Finish designating responibility of ID tracking
         named_schedules = self.assign_id(schedules)
 
         for schedule_id in named_schedules.keys():
             this_schedule = named_schedules[schedule_id]
             slots = self.flatten_time_ranges(this_schedule)
+
             prefix = type_id * self.TYPE_OFFSET + schedule_id * self.ID_OFFSET
             shifts += [prefix + shift for shift in slots]
 
         return shifts
 
+    # Attempt to control ID for UIDs
     def assign_id(self, schedules):
         return self.index_elements(*schedules)
 
+    # Avoiding loop of fxn calls with use of *args
     def index_elements(self, *args):
         keys = range(len(args))
         return dict(zip(keys, args))
@@ -65,6 +70,9 @@ class ScheduleInterpreter():
         flat = []
 
         # TODO: decrease indentation, yikes.
+        # TODO: Replace UID with OOP solution
+        # TODO: Add weight to edges by storing length of consecutive shift availability
+        #       This will prioritize longer shifts in a max weight graph
         for day in self.DOW:
             ranges = []
             todays_slots = []
@@ -153,7 +161,9 @@ class ScheduleInterpreter():
             cell_value = value_mapping.get(key, default_value)
 
             try:
-                table[row][column] = cell_value # Note the ordering of row and column!!!
+                # Note the ordering of row and column!!!
+                table[row][column] = cell_value
+
             except IndexError as ie:
                 print("Cell at Row: %s, Column: %s is not in range:") % (row, column)
                 print("Value %s, Table:\n %s") % (cell_value, table)
@@ -163,9 +173,9 @@ class ScheduleInterpreter():
 
     # Generate index for each UID and Slot pair
     # Location in final table is dependent upon:
-    #   Time of Day,    Day of week,    Concurrent employee #, and an
-    #       Offset in minutes from the start of the workday
-    # TODO: simplify table build by oversizing and parsing content later
+    # 1) Time of day,   2) Day of week,    3) Concurrent employee #, and
+    #       4) Offset in minutes from the start of the workday
+    # TODO: simplify table by oversizing and parsing later, i.e. remove (4)
     # Return (x_index, y_index, UID) tuples
     def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
         SHIFT_UID = self.TYPE_SHIFT - 1
@@ -173,26 +183,24 @@ class ScheduleInterpreter():
         y_offset = self.text_to_minutes(self.FIRST_SHIFT)
         indices = []
 
+        # TODO: Make this whole method easier to read and find bugs?
+
         for pair in value_location_pairs:
             slot_UID = pair[SHIFT_UID]
             x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
-            y = (self.get_time_of_day(slot_UID) - y_offset) // self.SHIFT_LENGTH
+            y = (self.get_TOD(slot_UID) - y_offset) // self.SHIFT_LENGTH
             indices.append( (x, y, pair[WORKER_UID]) )
 
         return indices
 
-    # DEPRECATED
-    # Assuming little to no validation on this method because of limited use
-    # and purpose of simple abstraction with high coupling.
-    def generate_index(self, slot_UID):
-        return self.append_indices_to_values((0, slot_UID))[0]
-
     # Series of UID-specific helper functions to avoid duplication and error
     # UID format: T##DMMMM, note that int is required input
-    def get_time_of_day(self, slot_UID):
+    # Get Time of Day (TOD)
+    def get_TOD(self, slot_UID):
         # '2005ABCD' -> ABCD
         return (slot_UID % self.DOW_OFFSET)
 
+    # Get Day of Week (DOW)
     def get_DOW(self, slot_UID):
         # '101A1015' -> A
         return (slot_UID % self.ID_OFFSET // self.DOW_OFFSET)
@@ -206,9 +214,11 @@ class ScheduleInterpreter():
         return (slot_UID // self.TYPE_OFFSET)
     # End series of GET UID-info helpers
 
+    # TODO: combine_adjacent_slots() for Calendar feature and/or weighted edges
     def combine_adjacent_slots(self):
         pass
 
+    # Given std format of "hh:mm" return the int mmmm
     def text_to_minutes(self, time):
         t = self.timecheck(time)
         hr = int(t.split(':')[0])
@@ -223,6 +233,7 @@ class ScheduleInterpreter():
     def round_off(self, num, interval):
         return ((num // interval) * interval)
 
+    # TODO: Completely rework this timecheck(time) mehtod from scratch
     # Expecting any of the following formats:
     #   hh
     #   hh pm/am
@@ -264,6 +275,7 @@ class ScheduleInterpreter():
         return result
 
 
+    # TODO: Debate "duplication of code" versus readability
     # Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30
     def create_time_slots(self, start_inclusive, end_exclusive):
         interval = self.SHIFT_LENGTH
@@ -281,6 +293,6 @@ class ScheduleInterpreter():
 
         start_in_minutes = self.round_off(starting_minute, interval)
         end_in_minutes = self.round_off(ending_minute, interval)
-        return range(start_in_minutes, end_in_minutes, interval)
 
+        return(range(start_in_minutes, end_in_minutes, interval))
 
