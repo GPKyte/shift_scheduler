@@ -14,28 +14,29 @@ def main():
     tester.test_generate_master_schedule()
     tester.test_print_table_as_csv()
     tester.test_create_best_schedule()
+    tester.test_exclusive_days()
 
 class TestMachine():
     all_day = '10:00-17:00'
     avail_M = {
-        'Name': 'A',
+        'Name': 'A_M',
         'Hours': '1',
         'M': all_day,
     }
     avail_T = {
-        'Name': 'B',
+        'Name': 'B_T',
         'Hours': '2',
         'T': all_day,
     }
     avail_WTF = {
-        'Name': 'C',
+        'Name': 'C_WTF',
         'Hours': '1',
         'W': all_day,
         'T': all_day,
         'F': all_day
     }
     avail_USR = {
-        'Name': 'D',
+        'Name': 'D_USR',
         'Hours': '1',
         'S': all_day,
         'U': all_day
@@ -80,13 +81,13 @@ class TestMachine():
     def test_timecheck(self):
         # hh, hh pm/am, hhpm/am, hh:mm, hh:mm pm/am, hh:mmpm/am
         test_cases = {
-            "10": "10:00",
-            "10 pm": "22:00",
-            "10am": "10:00",
-            "11:15": "11:15",
-            "18:45": "18:45",
+            "10":       "10:00",
+            "10 pm":    "22:00",
+            "10am":     "10:00",
+            "11:15":    "11:15",
+            "18:45":    "18:45",
             "18:45 pm": "18:45",
-            "6:45pm": "18:45"
+            "6:45pm":   "18:45"
         }
         for test in test_cases.keys():
             try:
@@ -94,6 +95,27 @@ class TestMachine():
                 assert(test_cases[test] == checked)
             except AssertionError:
                 print("%s -> %s != %s" % (test, test_cases[test], checked))
+
+    def __generate_schedule__(self, workers):
+        s_slots = self.scheduler.create_time_slots('10:00', '24:00')
+        w_slots = self.scheduler.generate_shifts(
+            ScheduleInterpreter.TYPE_WORKER, *workers
+        )
+        ID_Mapping = self.scheduler.assign_id(workers)
+        shifts = assign_shifts(w_slots, s_slots)
+        table = self.scheduler.create_master_schedule(shifts, ID_Mapping)
+
+        return table
+
+    def test_exclusive_days(self):
+        workers = (self.avail_USR, self.avail_WTF)
+        table = self.__generate_schedule__(workers)
+        print(as_CSV(table))
+
+    def test_shared_days(self):
+        workers = (self.avail_T, self.avail_WTF)
+        table = self.__generate_schedule__(workers)
+        print(as_CSV(table))
 
     def test_generate_master_schedule(self):
         worker_UID = 10100600 # Worker 2 at 10:00 Monday
