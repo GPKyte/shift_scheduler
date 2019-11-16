@@ -6,15 +6,16 @@ from pprint import pprint
 
 def main():
     tester = TestMachine()
-    tester.test_generate_shifts()
+    tester.test_assign_id_and_index()
+    #tester.test_generate_shifts()
     tester.test_convert_std_time()
     tester.test_week_hours_to_slots()
     tester.test_timecheck()
     tester.test_join_lists()
     tester.test_generate_master_schedule()
     tester.test_print_table_as_csv()
-    tester.test_create_best_schedule()
     tester.test_exclusive_days()
+    tester.test_flatten_time_range()
 
 class TestMachine():
     all_day = '10:00-17:00'
@@ -39,12 +40,12 @@ class TestMachine():
         'Name': 'D_USR',
         'Hours': '1',
         'S': all_day,
-        'U': all_day
-
+        'U': all_day,
+        'R': all_day
     }
     ben_avail = {
-        'name': 'Ben S',
-        'hours': '8',
+        'Name': 'Ben S',
+        'Hours': '8',
         'M': '10:00-13:00, 13:00-17:00',
         'T': all_day,
         'W': '10:00-12:00, 13:00-17:00',
@@ -52,10 +53,11 @@ class TestMachine():
         'F': '10:00-12:00'
     }
     short_avail = {
-        'name': 'Shortie',
-        'hours': '1',
+        'Name': 'Shortie',
+        'Hours': '1',
         'M': '10:00-13:00'
     }
+
     def __init__(self):
         self.scheduler = ScheduleInterpreter()
 
@@ -72,11 +74,16 @@ class TestMachine():
             print("Results: ", listAB)
             print("Goal: ", goal_pairs)
 
-    # An integrated test for expected schedule
-    def test_create_best_schedule(self):
-        #print(as_CSV(make_matching('docs/test_workers', 'docs/test_shifts')))
-        pass
+    def test_assign_id_and_index(self):
+        need_id = [{'name' : 'a_1'}, {'name' : 'b_2'}, {'name' : 'c_3'}]
+        with_id = self.scheduler.assign_id(need_id)
 
+        print(with_id)
+        pprint(self.scheduler.flatten_time_ranges(with_id.get(0)))
+
+    def test_flatten_time_range(self):
+        flat = self.scheduler.flatten_time_ranges(self.avail_M)
+        print(flat)
 
     def test_timecheck(self):
         # hh, hh pm/am, hhpm/am, hh:mm, hh:mm pm/am, hh:mmpm/am
@@ -101,9 +108,13 @@ class TestMachine():
         w_slots = self.scheduler.generate_shifts(
             ScheduleInterpreter.TYPE_WORKER, *workers
         )
-        ID_Mapping = self.scheduler.assign_id(workers)
+        ID_schedules = self.scheduler.assign_id(workers)
+        ID_mapping = dict(
+            [(w, ID_schedules[w]['Name']) for w in ID_schedules.keys()]
+        )
+
         shifts = assign_shifts(w_slots, s_slots)
-        table = self.scheduler.create_master_schedule(shifts, ID_Mapping)
+        table = self.scheduler.create_master_schedule(shifts, ID_mapping)
 
         return table
 
@@ -191,6 +202,7 @@ None,None,None,None,None,None,None"""
         W = [10020600, 10020615, 10020630, 10020645, 10020660, 10020675, 10020690, 10020705, 10020780, 10020795, 10020810, 10020825, 10020840, 10020855, 10020870, 10020885, 10020900, 10020915, 10020930, 10020945, 10020960, 10020975, 10020990, 10021005]
         R = [10030600, 10030615, 10030630, 10030645, 10030660, 10030675, 10030690, 10030705, 10030720, 10030735, 10030750, 10030765]
         F = [10040600, 10040615, 10040630, 10040645, 10040660, 10040675, 10040690, 10040705]
+
         # The UID format is 'T##DMMMM':
         #   T = Type of time slot (shift versus worker)
         #   # = ID of time slot (first worker's id is 00)
@@ -204,14 +216,19 @@ None,None,None,None,None,None,None"""
         goal_combined = goal_ben + [ScheduleInterpreter.ID_OFFSET * 1 + x for x in goal_short]
         shifts_combined = self.scheduler.generate_shifts( \
             ScheduleInterpreter.TYPE_WORKER, self.ben_avail, self.short_avail)
-        try:
-            assert(shifts_ben == goal_ben)
-            assert(shifts_short == goal_short)
-            assert(shifts_combined == goal_combined)
-        except AssertionError:
-            self.compare_inequal_collections(shifts_short, goal_short)
-            self.compare_inequal_collections(shifts_ben, goal_ben)
-            self.compare_inequal_collections(shifts_combined, goal_combined)
+
+        testing_pairs = [
+            (shifts_ben, goal_ben),
+            (shifts_short, goal_short),
+            (shifts_combined, goal_combined)
+        ]
+
+        for each in testing_pairs:
+            try:
+                assert(each[0] == each[1])
+            except AssertionError:
+                self.compare_inequal_collections(each[0], each[1])
+                print()
 
     # For one employee availability
     # DMMMM where day is Day of week, from 0-6 (would 107 be better? For padding, yes)
