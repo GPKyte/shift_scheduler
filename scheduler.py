@@ -39,7 +39,7 @@ class ScheduleInterpreter():
             raise ValueError
 
         shifts = []
-        # TODO: Finish designating responibility of ID tracking
+        # TODO: Finish designating responsibility of ID tracking
         named_schedules = self.assign_id(schedules)
 
         for schedule_id in named_schedules.keys():
@@ -52,11 +52,13 @@ class ScheduleInterpreter():
         return shifts
 
     # Attempt to control ID for UIDs
-    def assign_id(self, schedules):
-        return self.index_elements(*schedules)
+    @staticmethod
+    def assign_id(schedules):
+        return ScheduleInterpreter.index_elements(*schedules)
 
     # Avoiding loop of fxn calls with use of *args
-    def index_elements(self, *args):
+    @staticmethod
+    def index_elements(*args):
         keys = range(len(args))
         return dict(zip(keys, args))
 
@@ -193,25 +195,30 @@ class ScheduleInterpreter():
 
         return indices
 
+    # TODO: Make these methods static (class methods instead of instance methods)
     # Series of UID-specific helper functions to avoid duplication and error
     # UID format: T##DMMMM, note that int is required input
     # Get Time of Day (TOD)
-    def get_TOD(self, slot_UID):
+    @staticmethod
+    def get_TOD(slot_UID):
         # '2005ABCD' -> ABCD
-        return (slot_UID % self.DOW_OFFSET)
+        return (slot_UID % ScheduleInterpreter.DOW_OFFSET)
 
     # Get Day of Week (DOW)
-    def get_DOW(self, slot_UID):
+    @staticmethod
+    def get_DOW(slot_UID):
         # '101A1015' -> A
-        return (slot_UID % self.ID_OFFSET // self.DOW_OFFSET)
+        return (slot_UID % ScheduleInterpreter.ID_OFFSET // ScheduleInterpreter.DOW_OFFSET)
 
-    def get_ID(self, slot_UID):
+    @staticmethod
+    def get_ID(slot_UID):
         # '1AB31015' -> AB
-        return (slot_UID % self.TYPE_OFFSET // self.ID_OFFSET)
+        return (slot_UID % ScheduleInterpreter.TYPE_OFFSET // ScheduleInterpreter.ID_OFFSET)
 
-    def get_type(self, slot_UID):
+    @staticmethod
+    def get_type(slot_UID):
         # 'A0911015' -> A
-        return (slot_UID // self.TYPE_OFFSET)
+        return (slot_UID // ScheduleInterpreter.TYPE_OFFSET)
     # End series of GET UID-info helpers
 
     # TODO: combine_adjacent_slots() for Calendar feature and/or weighted edges
@@ -219,18 +226,21 @@ class ScheduleInterpreter():
         pass
 
     # Given std format of "hh:mm" return the int mmmm
-    def text_to_minutes(self, time):
-        t = self.timecheck(time)
+    @staticmethod
+    def text_to_minutes(time):
+        t = ScheduleInterpreter.timecheck(time)
         hr = int(t.split(':')[0])
         m = int(t.split(':')[1])
         return (60 * hr + m)
 
-    def minutes_to_text(self, num):
+    @staticmethod
+    def minutes_to_text(num):
         hr = num // 60
         m = num % 60
         return("%s:%s" % (hr, m))
 
-    def round_off(self, num, interval):
+    @staticmethod
+    def round_off(num, interval):
         return ((num // interval) * interval)
 
     # TODO: Completely rework this timecheck(time) mehtod from scratch
@@ -243,7 +253,8 @@ class ScheduleInterpreter():
     #   hh:mmpm/am
     #
     # Returning hh:mm
-    def timecheck(self, time):
+    @staticmethod
+    def timecheck(time):
         tmp = None
         is_past_noon = False
         # Do not change order of operations carelessly
