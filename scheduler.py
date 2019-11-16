@@ -145,9 +145,14 @@ class ScheduleInterpreter():
         # Note: BC table is small, performance gains from locality negligible
         table = [[None for col in total_weekly_coverage] for row in max_daily_shifts]
 
-        # TODO: Better yet, make one function call and return the indices appended to data
         indices = self.append_indices_to_values(num_concurrent_shifts, *assigned_shifts)
-        table = self.fill_table(table, indices, worker_names)
+        names_and_positions = map(
+            lambda (row, col, UID): # Convert the UIDs to readable names
+                (row, col, worker_names.get(self.get_ID(UID), UID)),
+            indices
+        )
+
+        table = self.fill_table(table, indices)
         master = [headers] + table # headers must be list to append row to top
 
         return master
@@ -156,11 +161,10 @@ class ScheduleInterpreter():
     #   then plots values by their provided indices
     #   while converting values based on given mapping if such mapping exists
     # Returns same table address; this is a mutator function
-    def fill_table(self, table, index_value_tuples, value_mapping={}):
+    def fill_table(self, table, index_value_tuples):
         for assignment in index_value_tuples:
-            column, row, default_value = assignment
-            key = self.get_ID(default_value)
-            cell_value = value_mapping.get(key, default_value)
+            column, row, cell_value = assignment
+            print(assignment)
 
             try:
                 # Note the ordering of row and column!!!
