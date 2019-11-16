@@ -6,8 +6,9 @@ from pprint import pprint
 
 def main():
     tester = TestMachine()
+    tester.test_remove_empty_rows_from_table()
     tester.test_assign_id_and_index()
-    #tester.test_generate_shifts()
+    tester.test_generate_shifts()
     tester.test_convert_std_time()
     tester.test_week_hours_to_slots()
     tester.test_timecheck()
@@ -264,6 +265,23 @@ None,None,None,None,None,None,None"""
         except AssertionError:
             print(result)
 
+    def test_remove_empty_rows_from_table(self):
+        raw_table = end_table = [
+            [None],
+            [1],
+            [None],
+            [None],
+            [2],
+            [3],
+            [None]
+        ]
+        goal_pruned = [[1], [2], [3]]
+        self.scheduler.prune_empty_lists_from(raw_table)
+
+        try:
+            assert(end_table == goal_pruned)
+        except AssertionError:
+            print("FAILED to remove correct rows")
 
 if __name__ == '__main__':
     main()
