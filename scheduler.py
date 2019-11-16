@@ -28,32 +28,38 @@ class ScheduleInterpreter():
     DOW_OFFSET   =    10000
 
 
-    # Generate index for each UID and Slot pair
-    # Location in final table is dependent upon:
-    # 1) Time of day,   2) Day of week,    3) Concurrent employee #, and
-    #       4) Offset in minutes from the start of the workday
-    # TODO: simplify table by oversizing and parsing later, i.e. remove (4)
-    # Return (x_index, y_index, UID) tuples
     def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
-        SHIFT_UID = self.TYPE_SHIFT - 1
-        WORKER_UID = self.TYPE_WORKER - 1
+        """
+        WARNING: BUG-PRONE
+        Generate index for each UID and Slot pair
+        Location in final table is dependent upon:
+            1) Time of day,   2) Day of week,    3) Concurrent employee #, and
+            4) Offset in minutes from the start of the workday
+
+        Return (x_index, y_index, UID) tuples
+        """
+        SHIFT_UID = self.TYPE_SHIFT - 1 # 0-index
+        WORKER_UID = self.TYPE_WORKER - 1 # 0-index
         y_offset = self.text_to_minutes(self.FIRST_SHIFT)
         indices = []
 
+        # TODO: simplify table by oversizing and parsing later, i.e. remove (4)
         # TODO: Make this whole method easier to read and find bugs?
 
         for pair in value_location_pairs:
             slot_UID = pair[SHIFT_UID]
             x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
             y = (self.get_TOD(slot_UID) - y_offset) // self.SHIFT_LENGTH
+
             indices.append( (x, y, pair[WORKER_UID]) )
 
         return indices
 
 
-    # Attempt to control ID for UIDs
     @staticmethod
     def assign_id(schedules):
+        # Attempt to control ID for UIDs
+        # TODO: Refactor ID scheme
         return ScheduleInterpreter.index_elements(*schedules)
 
     # TODO: combine_adjacent_slots() for Calendar feature and/or weighted edges
@@ -61,9 +67,10 @@ class ScheduleInterpreter():
         pass
 
 
-    # TODO: Debate "duplication of code" versus readability
-    # Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30
-    def create_time_slots(self, start_inclusive, end_exclusive):
+    def create_time_slots(self, start_inclusive, end_exclusive, military_time=False):
+        """ Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30 """
+        # TODO: Debate "duplication of code" versus readability
+
         interval = self.SHIFT_LENGTH
         starting_minute = self.text_to_minutes(start_inclusive)
         ending_minute = self.text_to_minutes(end_exclusive)
@@ -83,61 +90,49 @@ class ScheduleInterpreter():
         return(range(start_in_minutes, end_in_minutes, interval))
 
 
-    # Master Schedule is a fancy name for a regular table
-    # This will show for each day of the week
-    # Who is assigned to each slot of the day
-    # But there's a catch, some or all days have n >= 2 shifts
-    # i.e. multiple employees are scheduled to cover each day
-    # and this needs clear representation in the table
-    #
-    # Given list of UID pairs, create table
-    # Where workers' UID are in each cell and indexed by matching shift UID
-    # Pairs are necessary only because of concurrent employees
-    def create_master_schedule(self, assigned_shifts, worker_names={}):
-        WORKER_UID = 0
-        SHIFT_UID = 1
-        # This will become easiest if will assume there is room for n shifts
-        # in every possible time slot. Once we find n, we simply create a
-        # 2d table with appropriate headers and lack of matched shifts
-        # will take care of any discrepancies from this assumption
 
-        # Find n # of shifts by relying on information in UID
-        # Because ID is one order higher than time and DOW,
-        # Max UID will give the number of shifts concurrently scheduled
-        last_shift = int(max([s[SHIFT_UID] for s in assigned_shifts]))
-        num_concurrent_shifts = self.get_ID(last_shift) + 1 # 0-indexed ID
+    def create_master_schedule(self, assigned_shifts, worker_names={}, num_concurrent_shifts=2):
+        """
+        Master Schedule is a fancy name for a regular table
+        This will show for each day of the week
+        Who is assigned to each slot of the day
+        But there's a catch, some or all days have n >= 2 shifts
+        i.e. multiple employees are scheduled to cover each day
+        and this needs clear representation in the table
 
-        # Create headers
+        Given list of UID pairs, create table
+        Where workers' UID are in each cell and indexed by matching shift UID
+        Pairs are necessary only because of concurrent employees
+        """
+        WORKER_UID = self.TYPE_WORKER - 1 # 0-index
+        SHIFT_UID = self.TYPE_SHIFT - 1 # 0-index
+        hours_in_day = 24
         headers = []
+
         for day in self.DOW:
             for x in range(1, num_concurrent_shifts + 1):
                 suffix = str(x) if x > 1 else ''
                 headers.append(day + suffix)
 
-        # TODO: Make a build table method?
-        # TODO: Clean these rambling comments
-        # What's the table size?
-        # Well, as for columns we have N * DOW
-        # and for shifts we have 24 hr * 60 min/hr / 15 min/interval
-        # But more precisely, we have as many DOW as needed (<=7)
-        # And we only have time slots between the first and last shift
-        max_daily_shifts = range(len(
-            self.create_time_slots(self.FIRST_SHIFT, self.LAST_SHIFT)))
-        total_weekly_coverage = range(len(self.DOW) * num_concurrent_shifts)
 
-        # Because we will join as CSV most-likely
-        # create a column by row table (choose row then column)!!!!!!!!!!!!!!
-        # Note: BC table is small, performance gains from locality negligible
-        table = [[None for col in total_weekly_coverage] for row in max_daily_shifts]
+        # Note: intentionally make and prune excess of rows to simplify code
+        daily_shifts_as_rows = range(0, hours_in_day * 60, self.SHIFT_LENGTH)
+        columns_in_schedule = range(len(self.DOW) * num_concurrent_shifts)
 
-        indices = self.append_indices_to_values(num_concurrent_shifts, *assigned_shifts)
-        names_and_positions = map(
-            lambda (row, col, UID): # Convert the UIDs to readable names
-                (row, col, worker_names.get(self.get_ID(UID), UID)),
-            indices
-        )
+        # To export nicely as CSV file, make a ROW-MAJOR table
+        # Note: since table is small, performance gains from locality negligible
+        table = [[None for col in columns_in_schedule]
+                    for row in daily_shifts_as_rows]
 
-        table = self.fill_table(table, indices)
+        row_col_UID_tuples = self.append_indices_to_values(num_concurrent_shifts, *assigned_shifts)
+        tuples_with_nice_names = lambda (row, col, UID): \
+            (row, col, worker_names.get(self.get_ID(UID), UID))
+
+        positions_for_names = map(tuples_with_nice_names, row_col_UID_tuples)
+
+        self.fill_table(table, positions_for_names)
+        self.prune_empty_lists_from(table) # Remove empty rows
+
         master = [headers] + table # headers must be list to append row to top
 
         return master
@@ -262,6 +257,26 @@ class ScheduleInterpreter():
         m = num % 60
         return("%s:%s" % (hr, m))
 
+
+    @staticmethod
+    def prune_empty_lists_from(table):
+        """
+        Method results from a simplification on indexing
+        Some rows should never be used and will thus be empty, remove them
+        Note, this will work with either ROW/COL-MAJOR tables
+            but is originally intended for row-removal
+        """
+        empty = [None for x in range(len(table[0]))]
+        z = 0
+
+        while z < len(table):
+            if table[z] == empty:
+                table.pop(z)
+
+            else:
+                z += 1
+
+        return None
 
     @staticmethod
     def round_off(num, interval):
