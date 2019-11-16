@@ -27,76 +27,61 @@ class ScheduleInterpreter():
     ID_OFFSET    =   100000
     DOW_OFFSET   =    10000
 
-    # Creates UID for every possible time slot in week_availability
-    # The UID format is 'T##DMMMM':
-    #   T = Type of time slot (shift versus worker)
-    #   # = ID of time slot (first worker's id is 00)
-    #   D = Day of the week
-    #   M = Minutes from 0-1439 (24 * 60 - 1) of given day
-    def generate_shifts(self, type_id, *schedules):
-        # Enforce Data integrity of UID with simple check
-        if len(schedules) > 99 or type_id > 9:
-            raise ValueError
 
-        shifts = []
-        # TODO: Finish designating responsibility of ID tracking
-        named_schedules = self.assign_id(schedules)
+    # Generate index for each UID and Slot pair
+    # Location in final table is dependent upon:
+    # 1) Time of day,   2) Day of week,    3) Concurrent employee #, and
+    #       4) Offset in minutes from the start of the workday
+    # TODO: simplify table by oversizing and parsing later, i.e. remove (4)
+    # Return (x_index, y_index, UID) tuples
+    def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
+        SHIFT_UID = self.TYPE_SHIFT - 1
+        WORKER_UID = self.TYPE_WORKER - 1
+        y_offset = self.text_to_minutes(self.FIRST_SHIFT)
+        indices = []
 
-        for schedule_id in named_schedules.keys():
-            this_schedule = named_schedules[schedule_id]
-            slots = self.flatten_time_ranges(this_schedule)
+        # TODO: Make this whole method easier to read and find bugs?
 
-            prefix = type_id * self.TYPE_OFFSET + schedule_id * self.ID_OFFSET
-            shifts += [prefix + shift for shift in slots]
+        for pair in value_location_pairs:
+            slot_UID = pair[SHIFT_UID]
+            x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
+            y = (self.get_TOD(slot_UID) - y_offset) // self.SHIFT_LENGTH
+            indices.append( (x, y, pair[WORKER_UID]) )
 
-        return shifts
+        return indices
+
 
     # Attempt to control ID for UIDs
     @staticmethod
     def assign_id(schedules):
         return ScheduleInterpreter.index_elements(*schedules)
 
-    # Avoiding loop of fxn calls with use of *args
-    @staticmethod
-    def index_elements(*args):
-        keys = range(len(args))
-        return dict(zip(keys, args))
+    # TODO: combine_adjacent_slots() for Calendar feature and/or weighted edges
+    def combine_adjacent_slots(self):
+        pass
 
-    # Take set of time ranges in human readable format
-    # and return list of ranges in integer format
-    # Used both to create shifts and worker availability
-    #
-    # Creating UID which expresses info like weekday + time
-    def flatten_time_ranges(self, work_hours):
-        day_id = 0
-        flat = []
 
-        # TODO: decrease indentation, yikes.
-        # TODO: Replace UID with OOP solution
-        # TODO: Add weight to edges by storing length of consecutive shift availability
-        #       This will prioritize longer shifts in a max weight graph
-        for day in self.DOW:
-            ranges = []
-            todays_slots = []
+    # TODO: Debate "duplication of code" versus readability
+    # Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30
+    def create_time_slots(self, start_inclusive, end_exclusive):
+        interval = self.SHIFT_LENGTH
+        starting_minute = self.text_to_minutes(start_inclusive)
+        ending_minute = self.text_to_minutes(end_exclusive)
 
-            if work_hours.get(day):
-                ranges += work_hours.get(day).split(', ')
+        if ending_minute <= starting_minute:
+            # Timecheck can't handle assumptions made in
+            # human-readable time ranges without more context
+            # this is a workaround to insure 24-hour upheld
+            ending_minute += (12 * 60)
+        if starting_minute < self.text_to_minutes(self.FIRST_SHIFT):
+            # Must be PM work if earlier than first shift
+            starting_minute += (12 * 60)
 
-            for time_range in ranges:
-                try:
-                    start, end = time_range.split('-')
-                except ValueError:
-                    print("Could not parse this time range: ", time_range)
-                    raw_input()
-                    continue
+        start_in_minutes = self.round_off(starting_minute, interval)
+        end_in_minutes = self.round_off(ending_minute, interval)
 
-                todays_slots += self.create_time_slots(start, end)
+        return(range(start_in_minutes, end_in_minutes, interval))
 
-            prefix = day_id * self.DOW_OFFSET
-            day_id += 1
-            flat += [prefix + slot for slot in todays_slots]
-
-        return flat
 
     # Master Schedule is a fancy name for a regular table
     # This will show for each day of the week
@@ -177,57 +162,111 @@ class ScheduleInterpreter():
 
         return table
 
-    # Generate index for each UID and Slot pair
-    # Location in final table is dependent upon:
-    # 1) Time of day,   2) Day of week,    3) Concurrent employee #, and
-    #       4) Offset in minutes from the start of the workday
-    # TODO: simplify table by oversizing and parsing later, i.e. remove (4)
-    # Return (x_index, y_index, UID) tuples
-    def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
-        SHIFT_UID = self.TYPE_SHIFT - 1
-        WORKER_UID = self.TYPE_WORKER - 1
-        y_offset = self.text_to_minutes(self.FIRST_SHIFT)
-        indices = []
 
-        # TODO: Make this whole method easier to read and find bugs?
+    # Take set of time ranges in human readable format
+    # and return list of ranges in integer format
+    # Used both to create shifts and worker availability
+    #
+    # Creating UID which expresses info like weekday + time
+    def flatten_time_ranges(self, work_hours):
+        day_id = 0
+        flat = []
 
-        for pair in value_location_pairs:
-            slot_UID = pair[SHIFT_UID]
-            x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
-            y = (self.get_TOD(slot_UID) - y_offset) // self.SHIFT_LENGTH
-            indices.append( (x, y, pair[WORKER_UID]) )
+        # TODO: decrease indentation, yikes.
+        # TODO: Replace UID with OOP solution
+        # TODO: Add weight to edges by storing length of consecutive shift availability
+        #       This will prioritize longer shifts in a max weight graph
+        for day in self.DOW:
+            ranges = []
+            todays_slots = []
 
-        return indices
+            if work_hours.get(day):
+                ranges += work_hours.get(day).split(', ')
 
-    # TODO: Make these methods static (class methods instead of instance methods)
-    # Series of UID-specific helper functions to avoid duplication and error
-    # UID format: T##DMMMM, note that int is required input
-    # Get Time of Day (TOD)
-    @staticmethod
-    def get_TOD(slot_UID):
-        # '2005ABCD' -> ABCD
-        return (slot_UID % ScheduleInterpreter.DOW_OFFSET)
+            for time_range in ranges:
+                try:
+                    start, end = time_range.split('-')
+                except ValueError:
+                    print("Could not parse this time range: ", time_range)
+                    raw_input()
+                    continue
 
-    # Get Day of Week (DOW)
+                todays_slots += self.create_time_slots(start, end)
+
+            prefix = day_id * self.DOW_OFFSET
+            day_id += 1
+            flat += [prefix + slot for slot in todays_slots]
+
+        return flat
+
+
+    # Creates UID for every possible time slot in week_availability
+    # The UID format is 'T##DMMMM':
+    #   T = Type of time slot (shift versus worker)
+    #   # = ID of time slot (first worker's id is 00)
+    #   D = Day of the week
+    #   M = Minutes from 0-1439 (24 * 60 - 1) of given day
+    def generate_shifts(self, type_id, *schedules):
+        # Enforce Data integrity of UID with simple check
+        if len(schedules) > 99 or type_id > 9:
+            raise ValueError
+
+        shifts = []
+        # TODO: Finish designating responsibility of ID tracking
+        named_schedules = self.assign_id(schedules)
+
+        for schedule_id in named_schedules.keys():
+            this_schedule = named_schedules[schedule_id]
+            slots = self.flatten_time_ranges(this_schedule)
+
+            prefix = type_id * self.TYPE_OFFSET + schedule_id * self.ID_OFFSET
+            shifts += [prefix + shift for shift in slots]
+
+        return shifts
+
+
     @staticmethod
     def get_DOW(slot_UID):
+        # Get Day of Week (DOW)
         # '101A1015' -> A
         return (slot_UID % ScheduleInterpreter.ID_OFFSET // ScheduleInterpreter.DOW_OFFSET)
 
     @staticmethod
     def get_ID(slot_UID):
+        # ID refers to which of a type is described, e.g. ID 2 may be the third worker
         # '1AB31015' -> AB
         return (slot_UID % ScheduleInterpreter.TYPE_OFFSET // ScheduleInterpreter.ID_OFFSET)
+
+    @staticmethod
+    def get_TOD(slot_UID):
+        # Get Time of Day (TOD)
+        # '2005ABCD' -> ABCD
+        return (slot_UID % ScheduleInterpreter.DOW_OFFSET)
 
     @staticmethod
     def get_type(slot_UID):
         # 'A0911015' -> A
         return (slot_UID // ScheduleInterpreter.TYPE_OFFSET)
-    # End series of GET UID-info helpers
 
-    # TODO: combine_adjacent_slots() for Calendar feature and/or weighted edges
-    def combine_adjacent_slots(self):
-        pass
+
+    # Avoiding loop of fxn calls with use of *args
+    @staticmethod
+    def index_elements(*args):
+        keys = range(len(args))
+        return dict(zip(keys, args))
+
+
+    @staticmethod
+    def minutes_to_text(num):
+        hr = num // 60
+        m = num % 60
+        return("%s:%s" % (hr, m))
+
+
+    @staticmethod
+    def round_off(num, interval):
+        return ((num // interval) * interval)
+
 
     # Given std format of "hh:mm" return the int mmmm
     @staticmethod
@@ -236,16 +275,6 @@ class ScheduleInterpreter():
         hr = int(t.split(':')[0])
         m = int(t.split(':')[1])
         return (60 * hr + m)
-
-    @staticmethod
-    def minutes_to_text(num):
-        hr = num // 60
-        m = num % 60
-        return("%s:%s" % (hr, m))
-
-    @staticmethod
-    def round_off(num, interval):
-        return ((num // interval) * interval)
 
     # TODO: Completely rework this timecheck(time) mehtod from scratch
     # Expecting any of the following formats:
@@ -288,26 +317,3 @@ class ScheduleInterpreter():
             result = "%s:%s" % (hr_proper, m)
 
         return result
-
-
-    # TODO: Debate "duplication of code" versus readability
-    # Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30
-    def create_time_slots(self, start_inclusive, end_exclusive):
-        interval = self.SHIFT_LENGTH
-        starting_minute = self.text_to_minutes(start_inclusive)
-        ending_minute = self.text_to_minutes(end_exclusive)
-
-        if ending_minute <= starting_minute:
-            # Timecheck can't handle assumptions made in
-            # human-readable time ranges without more context
-            # this is a workaround to insure 24-hour upheld
-            ending_minute += (12 * 60)
-        if starting_minute < self.text_to_minutes(self.FIRST_SHIFT):
-            # Must be PM work if earlier than first shift
-            starting_minute += (12 * 60)
-
-        start_in_minutes = self.round_off(starting_minute, interval)
-        end_in_minutes = self.round_off(ending_minute, interval)
-
-        return(range(start_in_minutes, end_in_minutes, interval))
-
