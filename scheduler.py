@@ -14,6 +14,8 @@
 # collected and reinterpretted as human readable shifts assigned
 # the original n workers. Ideally all shifts will be matched
 # and each worker has a reasonable shift
+TESTING = True
+
 
 class ScheduleInterpreter():
     SHIFT_LENGTH = 15
@@ -22,10 +24,6 @@ class ScheduleInterpreter():
     FIRST_SHIFT  = '10:00'
     LAST_SHIFT   = '17:00'
     DOW          = 'MTWRFSU'
-
-    TYPE_OFFSET  = 10000000
-    ID_OFFSET    =   100000
-    DOW_OFFSET   =    10000
 
 
     def append_indices_to_values(self, *UID_pairs):
@@ -88,7 +86,6 @@ class ScheduleInterpreter():
         end_in_minutes = self.round_off(ending_minute, interval)
 
         return(range(start_in_minutes, end_in_minutes, interval))
-
 
 
     def create_master_schedule(self, assigned_shifts, worker_names={}, num_concurrent_shifts=2):
@@ -243,6 +240,8 @@ class ScheduleInterpreter():
         return (slot_UID // ScheduleInterpreter.TYPE_OFFSET)
 
 
+    ### Utility methods for public ###
+
     # Avoiding loop of fxn calls with use of *args
     @staticmethod
     def index_elements(*args):
@@ -290,7 +289,7 @@ class ScheduleInterpreter():
         m = int(t.split(':')[1])
         return (60 * hr + m)
 
-    # TODO: Completely rework this timecheck(time) mehtod from scratch
+    # TODO: Completely rework this timecheck(time) method from scratch
     # Expecting any of the following formats:
     #   hh
     #   hh pm/am
@@ -331,3 +330,81 @@ class ScheduleInterpreter():
             result = "%s:%s" % (hr_proper, m)
 
         return result
+
+
+class Slot():
+    """
+    The UID used in previous versions of the project redesigned in OOP fashion for cleaner function and reference
+    """
+    WEIGHT_OFFSET = 100000000   # Weight < 1000
+    TYPE_OFFSET   =  10000000   # Type   < 10
+    ID_OFFSET     =    100000   # ID     < 100
+    DOW_OFFSET    =     10000   # DOW    < 10
+
+    def __init__(self, DOW, ID, name, TOD, type, weight=0):
+        self.DOW = DOW
+        self.ID = ID
+        self.name = name
+        self.TOD = TOD
+        self.type = slot_type
+        self.weight = weight
+
+        self.ordered_repr = [
+            self.name,
+            self.weight,
+            self.type,
+            self.ID,
+            self.DOW,
+            self.TOD
+        ]
+
+        if TESTING:
+            assert(self.validation_check_passes())
+
+
+    def __repr__(self):
+        raw_repr = self.ordered_repr
+
+        clear_repr = map(
+            lambda for_not_a_str: str(for_not_a_str),
+            raw_repr
+        )
+
+        return(f"{super().__init__()}: {" ".join(clear_repr)}")
+
+    def __str__(self):
+        return(str(self.name))
+
+    def __int__(self):
+        just_time_and_day = self.DOW_OFFSET*self.DOW + self.TOD
+
+        return just_time_and_day
+
+    def __eq__(self):
+        
+
+    def __ne__(self):
+
+    def __gt__(self):
+
+    def __lt__(self):
+
+    def validation_check_passes():
+
+    def make_many_slots(tuples_of_init_args):
+        # Opportunity for Vectorization
+        return []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
