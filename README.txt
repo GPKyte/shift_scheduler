@@ -1,12 +1,34 @@
-# Shift Scheduler
+# Shift Scheduler  
 
-Situation: It is difficult and confusing to schedule part-time workers effectively
-We are given n workers and m shifts, shifts may be the same time as another, (e.g. 2 scheduled employees in an hour)
-Shifts are broken into 15 minute blocks for matching
+A static employee schedule generator. Given employee schedules and desired coverage, find a desireable schedule that maximizes coverage and minimizes bad schedule decisions. Support is limited to needs of specific organization, but suggestions and pull requests for improvement are welcome!  
 
-Goal: Provide satisfactory weekly employee schedule such that all shifts are filled and hours evenly distributed~~or match given preferences
+### Motivation  
 
-Process: Use maximum bipartite matching algorithm to match shifts as provided by employee availability
-Translate availability into workable blocks which become vertices in our bipartite graph, match those (create edges) to shifts at the same time
+Scheduling part-time workers effectively is a time-consuming and head-ache inducing task in some work environments.
 
-Intermedite handling will be necessary until later
+### Goal  
+
+Provide satisfactory employee schedule such that all shifts are filled.  
+Even better if each employee gets nearly their desired # number of hours.  
+
+## Process
+
+*Input* is a series of JSON objects describing employee availabilities  
+
+Covert given schedules into indexed objects representing timeslots that one is available to fulfill an equivalent shift-to-cover time slot.  
+Leverage graph theory solution to Job Matching, i.e. maximum cardinality, imperfect 1:1 matching of a bipartite graph, to make scheduling choices.  
+Interpret matcher's choices into a human-readable table (perhaps in CSV format)  
+
+*Output* is CSV file named by default "new_schedule.csv"  
+
+## Specific Usage  
+
+python3 matcher.py [OPTIONS] -f /full/path/to/employee_availability.json
+
+### Options
+
+*Unsupported*
+TODO: Add command interpreter library for easy argument parsing
+TODO: Consider separating enough to easily attach web API or similar
+TODO: Connect to calendar service and invite employees to their shifts
+
