@@ -6,7 +6,7 @@
 #
 # This is admittedly brittle as some assumptions that work for
 # the client have been hard-coded as simplifications in this version.
-# 
+#
 # This problem is reduced to Bipartite Graphs & Job Matching,
 # This is done at a "slot" based level. Look into SCHEDULER.PY
 # for more information on time range interpretation of availabilities
@@ -146,7 +146,7 @@ def make_matching(availability_file):
     output_file.close()
 
     return(table)
- 
+
 
 # Take two sets of all unique slots that can be matched
 # By an equality of Time of Day stored in the UID of each slot

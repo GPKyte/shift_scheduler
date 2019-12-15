@@ -6,17 +6,19 @@ from pprint import pprint
 
 def main():
     tester = TestMachine()
-    tester.test_remove_empty_rows_from_table()
+
     tester.test_assign_id_and_index()
-    tester.test_generate_shifts()
     tester.test_convert_std_time()
-    tester.test_week_hours_to_slots()
-    tester.test_timecheck()
-    tester.test_join_lists()
-    tester.test_generate_master_schedule()
-    tester.test_print_table_as_csv()
     tester.test_exclusive_days()
     tester.test_flatten_time_range()
+    tester.test_generate_shifts()
+    tester.test_generate_master_schedule()
+    tester.test_print_table_as_csv()
+    tester.test_join_lists()
+    tester.test_remove_empty_rows_from_table()
+    tester.test_timecheck()
+    tester.test_week_hours_to_slots()
+
 
 class TestMachine():
     all_day = '10:00-17:00'
@@ -70,6 +72,7 @@ class TestMachine():
 
         try:
             assert(listAB == goal_pairs)
+    
         except AssertionError:
             pass
             print("Results: ", listAB)

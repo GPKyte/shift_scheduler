@@ -28,30 +28,28 @@ class ScheduleInterpreter():
     DOW_OFFSET   =    10000
 
 
-    def append_indices_to_values(self, num_subcolumns, *value_location_pairs):
-        """
+    def append_indices_to_values(self, *UID_pairs):
+        """ better name is **decide_indices_for(___)**
+
         WARNING: BUG-PRONE
         Generate index for each UID and Slot pair
-        Location in final table is dependent upon:
-            1) Time of day,   2) Day of week,    3) Concurrent employee #, and
-            4) Offset in minutes from the start of the workday
+        Location in final table is dependent upon shift UID info:
+            1) Time of day,   2) Day of week,    3) Concurrent employee #
+            Row (1); Col (2, 3)
 
         Return (x_index, y_index, UID) tuples
         """
-        SHIFT_UID = self.TYPE_SHIFT - 1 # 0-index
-        WORKER_UID = self.TYPE_WORKER - 1 # 0-index
-        y_offset = self.text_to_minutes(self.FIRST_SHIFT)
+        shift_index = self.TYPE_SHIFT - 1 # 0-index
+        worker_index = self.TYPE_WORKER - 1 # 0-index
         indices = []
 
-        # TODO: simplify table by oversizing and parsing later, i.e. remove (4)
-        # TODO: Make this whole method easier to read and find bugs?
+        for pair in UID_pairs:
+            slot_UID = pair[shift_index]
 
-        for pair in value_location_pairs:
-            slot_UID = pair[SHIFT_UID]
-            x = self.get_DOW(slot_UID) * num_subcolumns + self.get_ID(slot_UID)
-            y = (self.get_TOD(slot_UID) - y_offset) // self.SHIFT_LENGTH
+            row = self.get_TOD(slot_UID) // self.SHIFT_LENGTH
+            col = self.get_DOW(slot_UID) + self.get_ID(slot_UID)
 
-            indices.append( (x, y, pair[WORKER_UID]) )
+            indices.append((row, col, pair[worker_index]))
 
         return indices
 
@@ -75,14 +73,16 @@ class ScheduleInterpreter():
         starting_minute = self.text_to_minutes(start_inclusive)
         ending_minute = self.text_to_minutes(end_exclusive)
 
+        if not military_time \
+            and (starting_minute < self.text_to_minutes(self.FIRST_SHIFT)):
+            # Must be PM work if earlier than first shift
+            starting_minute += (12 * 60)
+
         if ending_minute <= starting_minute:
             # Timecheck can't handle assumptions made in
             # human-readable time ranges without more context
             # this is a workaround to insure 24-hour upheld
             ending_minute += (12 * 60)
-        if starting_minute < self.text_to_minutes(self.FIRST_SHIFT):
-            # Must be PM work if earlier than first shift
-            starting_minute += (12 * 60)
 
         start_in_minutes = self.round_off(starting_minute, interval)
         end_in_minutes = self.round_off(ending_minute, interval)
@@ -124,7 +124,7 @@ class ScheduleInterpreter():
         table = [[None for col in columns_in_schedule]
                     for row in daily_shifts_as_rows]
 
-        row_col_UID_tuples = self.append_indices_to_values(num_concurrent_shifts, *assigned_shifts)
+        row_col_UID_tuples = self.append_indices_to_values(*assigned_shifts)
         tuples_with_nice_names = lambda (row, col, UID): \
             (row, col, worker_names.get(self.get_ID(UID), UID))
 
@@ -144,7 +144,6 @@ class ScheduleInterpreter():
     def fill_table(self, table, index_value_tuples):
         for assignment in index_value_tuples:
             column, row, cell_value = assignment
-            print(assignment)
 
             try:
                 # Note the ordering of row and column!!!
@@ -224,13 +223,13 @@ class ScheduleInterpreter():
     def get_DOW(slot_UID):
         # Get Day of Week (DOW)
         # '101A1015' -> A
-        return (slot_UID % ScheduleInterpreter.ID_OFFSET // ScheduleInterpreter.DOW_OFFSET)
+        return (slot_UID % ScheduleInterpreter.ID_OFFSET) // ScheduleInterpreter.DOW_OFFSET
 
     @staticmethod
     def get_ID(slot_UID):
         # ID refers to which of a type is described, e.g. ID 2 may be the third worker
         # '1AB31015' -> AB
-        return (slot_UID % ScheduleInterpreter.TYPE_OFFSET // ScheduleInterpreter.ID_OFFSET)
+        return (slot_UID % ScheduleInterpreter.TYPE_OFFSET) // ScheduleInterpreter.ID_OFFSET
 
     @staticmethod
     def get_TOD(slot_UID):
