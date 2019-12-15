@@ -336,17 +336,25 @@ class Slot():
     """
     The UID used in previous versions of the project redesigned in OOP fashion for cleaner function and reference
     """
-    WEIGHT_OFFSET = 100000000   # Weight < 1000
-    TYPE_OFFSET   =  10000000   # Type   < 10
-    ID_OFFSET     =    100000   # ID     < 100
-    DOW_OFFSET    =     10000   # DOW    < 10
 
-    def __init__(self, DOW, ID, name, TOD, type, weight=0):
-        self.DOW = DOW
-        self.ID = ID
-        self.name = name
-        self.TOD = TOD
-        self.type = slot_type
+    def __init__(
+            self,
+            day_in_cycle,
+            identifier,
+            nice_name
+            time_of_day,
+            timeslot_class,
+            cycle_size=7,
+            weight=0
+        ):
+
+        self.day_in_cycle = day_in_cycle
+        self.ID = identifier
+        # TODO: self.index = 0 # Idea to fill in later
+        self.name = nice_name
+        self.time_of_day = time_of_day
+        self.type = timeslot_class
+        self.cycle_size = cycle_size
         self.weight = weight
 
         self.ordered_repr = [
@@ -354,8 +362,8 @@ class Slot():
             self.weight,
             self.type,
             self.ID,
-            self.DOW,
-            self.TOD
+            self.day_in_cycle,
+            self.time_of_day
         ]
 
         if TESTING:
@@ -364,11 +372,7 @@ class Slot():
 
     def __repr__(self):
         raw_repr = self.ordered_repr
-
-        clear_repr = map(
-            lambda for_not_a_str: str(for_not_a_str),
-            raw_repr
-        )
+        clear_repr = map(str(), raw_repr)
 
         return(f"{super().__init__()}: {" ".join(clear_repr)}")
 
@@ -376,20 +380,26 @@ class Slot():
         return(str(self.name))
 
     def __int__(self):
-        just_time_and_day = self.DOW_OFFSET*self.DOW + self.TOD
+        repr_for_comparisons = f"{self.day_in_cycle}{self.time_of_day}"
+        just_time_and_day = int(repr_for_comparisons)
 
         return just_time_and_day
 
-    def __eq__(self):
-        
+    def __eq__(self, other):
+        return(int(self) == int(other))
 
-    def __ne__(self):
 
-    def __gt__(self):
+    def __ne__(self, other):
+        return(int(self) != int(other))
+
+    def __gt__(self, other):
+        return(int(self) > int(other))
 
     def __lt__(self):
+        return(int(self) < int(other))
 
     def validation_check_passes():
+        return False
 
     def make_many_slots(tuples_of_init_args):
         # Opportunity for Vectorization
