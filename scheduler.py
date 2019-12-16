@@ -65,62 +65,34 @@ class ScheduleInterpreter():
         return(range(start_in_minutes, end_in_minutes, interval))
 
 
-    def create_master_schedule(self, assigned_shifts, worker_names={}, num_concurrent_shifts=2):
-        """
-        Master Schedule is a fancy name for a regular table
-        This will show for each day of the week
-        Who is assigned to each slot of the day
-        But there's a catch, some or all days have n >= 2 shifts
-        i.e. multiple employees are scheduled to cover each day
-        and this needs clear representation in the table
+    def create_master_schedule(self, assigned_shifts):
+        slots = map(lambda shift_pair: shift_pair[0], assigned_shifts)
+        return self.make_table(slots)
 
-        Given list of UID pairs, create table
-        Where workers' UID are in each cell and indexed by matching shift UID
-        Pairs are necessary only because of concurrent employees
-        """
-        WORKER_UID = self.TYPE_WORKER - 1 # 0-index
-        SHIFT_UID = self.TYPE_SHIFT - 1 # 0-index
-        hours_in_day = 24
-        headers = []
 
-        for day in self.DOW:
-            for x in range(1, num_concurrent_shifts + 1):
-                suffix = str(x) if x > 1 else ''
-                headers.append(day + suffix)
-
+    # Headers in top row,
+    def make_table(self, slots):
+        def slot_to_col(slot):
+            return ({"day": slot.day_in_cycle, "id": slot.ID})
 
         # Note: intentionally make and prune excess of rows to simplify code
-        daily_shifts_as_rows = range(0, hours_in_day * 60, self.SHIFT_LENGTH)
-        # TODO: Rewrite as a map.reduce function using slot meta-data
-        columns_in_schedule = range(len(self.DOW) * num_concurrent_shifts)
+        rows = range(0, hours_in_day * 60, self.SHIFT_LENGTH)
+        columns = sorted(set(map(slot_to_col(), slots)))
+        headers = ["Time of Day"] + [c["day"] for c in columns]
 
         # To export nicely as CSV file, make a ROW-MAJOR table
         # Note: since table is small, performance gains from locality negligible
-        table = [[None for col in columns_in_schedule]
-                    for row in daily_shifts_as_rows]
+        table = [[minutes_to_text(row)] + [None for col in columns]
+                    for row in rows]
 
+        for slot in slots:
+            row_index = slot.time_of_day // self.SHIFT_LENGTH
+            col_index = columns.find(slot_to_col(slot))
+            table[row_index][col_index] = str(slot)
 
-        # At this point assigned_shifts = [(w_UID, s_UID), ...]
-        # TODO: retwrite relevant pieces to use slot meta-data
-        row_col_UID_tuples = self.append_indices_to_values(*assigned_shifts)
-        tuples_with_nice_names = lambda row, col, UID: \
-            (row, col, worker_names.get(self.get_ID(UID), UID))
-
-        positions_for_names = map(tuples_with_nice_names, row_col_UID_tuples)
-
-        self.fill_table(table, positions_for_names)
         self.prune_empty_lists_from(table) # Remove empty rows
 
-        master = [headers] + table # headers must be list to append row to top
-
-        return master
-
-    # Takes a sufficiently sized table
-    #   then plots values by their provided indices
-    #   while converting values based on given mapping if such mapping exists
-    # Returns same table address; this is a mutator function
-    def fill_table(self, table, time_slots):
-        
+        return headers + table
 
 
     # Take set of time ranges in human readable format
