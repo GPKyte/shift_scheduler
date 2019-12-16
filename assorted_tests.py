@@ -8,6 +8,9 @@ from pprint import pprint
 def main():
     tester = TestMachine()
 
+    #tester.run_new_tests()
+    #tester.run_regression_tests()
+
 
 
 class TestMachine():
@@ -25,32 +28,15 @@ class TestMachine():
         self.scheduler = ScheduleInterpreter()
 
 
-    def new_test(self, pretty_name=None):
-        def decorator(base_fxn):
-            if pretty_name is None:
-                pretty_name = f"Test {len(self.regression_tests[self.NEW])}"
-
-            def test_fxn():
-                try:
-                    base_fxn()
-                    test_results = f"{pretty_name:<50}: PASS"
-
-                except e:
-                    test_results = f"{pretty_name:<50}: FAIL"
-
-                return test_results
-
-            self.regression_tests[self.NEW][pretty_name] = test_fxn
-
-            return base_fxn
+    def run_new_tests(self):
+        pass
 
 
     # DELETE test_assign_id_and_index because it did not assert anything and this functionality will be rewritten
     # DELETED test_flatten_availability because of DRY
     # DELETED test_generate_shifts verbose with data, will break with OOP change, was not helpful in past
     # DELETE test_generate_master_schedule bc it was too tightly coupled, will break with generalization -> parameterize?
-    
-    @new_test
+
     def new_unnamed_test(self):
         pass
 
@@ -89,7 +75,6 @@ class TestMachine():
 
 
     # RENAMED
-    @new_test
     def test_timerange_to_slots(self):
         # From 10 am to 12 pm
         result = self.scheduler.create_time_slots('10:00', '24:00')

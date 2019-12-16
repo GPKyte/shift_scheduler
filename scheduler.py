@@ -32,43 +32,14 @@ class ScheduleInterpreter():
         self.SHIFT_LENGTH = shift_len
 
 
-    def append_indices_to_values(self, *UID_pairs):
-        """ better name is **decide_indices_for(___)**
-
-        WARNING: BUG-PRONE
-        Generate index for each UID and Slot pair
-        Location in final table is dependent upon shift UID info:
-            1) Time of day,   2) Day of week,    3) Concurrent employee #
-            Row (1); Col (2, 3)
-
-        Return (x_index, y_index, UID) tuples
-        """
-        shift_index = self.TYPE_SHIFT - 1 # 0-index
-        worker_index = self.TYPE_WORKER - 1 # 0-index
-        indices = []
-
-        for pair in UID_pairs:
-            slot_UID = pair[shift_index]
-
-            row = self.get_TOD(slot_UID) // self.SHIFT_LENGTH
-            col = self.get_DOW(slot_UID) + self.get_ID(slot_UID)
-
-            indices.append((row, col, pair[worker_index]))
-
-        return indices
-
-
     @staticmethod
     def assign_id(schedules):
         # Attempt to control ID for UIDs
         # TODO: Refactor ID scheme
         return ScheduleInterpreter.index_elements(*schedules)
 
-    # TODO: combine_adjacent_slots() for Calendar feature and/or weighted edges
-    def combine_adjacent_slots(self):
-        pass
 
-
+    # TODO: simplify by forcing military time
     def create_time_slots(self, start_inclusive, end_exclusive, military_time=False):
         """ Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30 """
         # TODO: Debate "duplication of code" versus readability
@@ -120,6 +91,7 @@ class ScheduleInterpreter():
 
         # Note: intentionally make and prune excess of rows to simplify code
         daily_shifts_as_rows = range(0, hours_in_day * 60, self.SHIFT_LENGTH)
+        # TODO: Rewrite as a map.reduce function using slot meta-data
         columns_in_schedule = range(len(self.DOW) * num_concurrent_shifts)
 
         # To export nicely as CSV file, make a ROW-MAJOR table
@@ -127,6 +99,9 @@ class ScheduleInterpreter():
         table = [[None for col in columns_in_schedule]
                     for row in daily_shifts_as_rows]
 
+
+        # At this point assigned_shifts = [(w_UID, s_UID), ...]
+        # TODO: retwrite relevant pieces to use slot meta-data
         row_col_UID_tuples = self.append_indices_to_values(*assigned_shifts)
         tuples_with_nice_names = lambda row, col, UID: \
             (row, col, worker_names.get(self.get_ID(UID), UID))
@@ -144,20 +119,8 @@ class ScheduleInterpreter():
     #   then plots values by their provided indices
     #   while converting values based on given mapping if such mapping exists
     # Returns same table address; this is a mutator function
-    def fill_table(self, table, index_value_tuples):
-        for assignment in index_value_tuples:
-            column, row, cell_value = assignment
-
-            try:
-                # Note the ordering of row and column!!!
-                table[row][column] = cell_value
-
-            except IndexError as ie:
-                print("Cell at Row: %s, Column: %s is not in range:") % (row, column)
-                print("Value %s, Table:\n %s") % (cell_value, table)
-                raise ie
-
-        return table
+    def fill_table(self, table, time_slots):
+        
 
 
     # Take set of time ranges in human readable format
@@ -173,77 +136,36 @@ class ScheduleInterpreter():
         # TODO: Replace UID with OOP solution
         # TODO: Add weight to edges by storing length of consecutive shift availability
         #       This will prioritize longer shifts in a max weight graph
-        for day in self.DOW:
-            ranges = []
-            todays_slots = []
-
-            if work_hours.get(day):
-                ranges += work_hours.get(day).split(', ')
-
-            for time_range in ranges:
-                try:
-                    start, end = time_range.split('-')
-                except ValueError:
-                    print("Could not parse this time range: ", time_range)
-                    raw_input()
-                    continue
-
-                todays_slots += self.create_time_slots(start, end)
-
-            prefix = day_id * self.DOW_OFFSET
-            day_id += 1
-            flat += [prefix + slot for slot in todays_slots]
-
-        return flat
 
 
-    # Creates UID for every possible time slot in week_availability
-    # The UID format is 'T##DMMMM':
-    #   T = Type of time slot (shift versus worker)
-    #   # = ID of time slot (first worker's id is 00)
-    #   D = Day of the week
-    #   M = Minutes from 0-1439 (24 * 60 - 1) of given day
+
+    # Make slots from provided availability schedules
     def generate_shifts(self, type_id, *schedules):
-        # Enforce Data integrity of UID with simple check
-        if len(schedules) > 99 or type_id > 9:
-            raise ValueError
-
-        shifts = []
-        # TODO: Finish designating responsibility of ID tracking
-        named_schedules = self.assign_id(schedules)
-
-        for schedule_id in named_schedules.keys():
-            this_schedule = named_schedules[schedule_id]
-            slots = self.flatten_time_ranges(this_schedule)
-
-            prefix = type_id * self.TYPE_OFFSET + schedule_id * self.ID_OFFSET
-            shifts += [prefix + shift for shift in slots]
-
-        return shifts
+        
 
 
     @staticmethod
     def get_DOW(slot_UID):
         # Get Day of Week (DOW)
         # '101A1015' -> A
-        return (slot_UID % ScheduleInterpreter.ID_OFFSET) // ScheduleInterpreter.DOW_OFFSET
+        return (slot_UID.day_in_cycle)
 
     @staticmethod
     def get_ID(slot_UID):
         # ID refers to which of a type is described, e.g. ID 2 may be the third worker
         # '1AB31015' -> AB
-        return (slot_UID % ScheduleInterpreter.TYPE_OFFSET) // ScheduleInterpreter.ID_OFFSET
+        return (slot_UID.ID)
 
     @staticmethod
     def get_TOD(slot_UID):
         # Get Time of Day (TOD)
         # '2005ABCD' -> ABCD
-        return (slot_UID % ScheduleInterpreter.DOW_OFFSET)
+        return (slot_UID.time_of_day)
 
     @staticmethod
     def get_type(slot_UID):
         # 'A0911015' -> A
-        return (slot_UID // ScheduleInterpreter.TYPE_OFFSET)
+        return (slot_UID.type)
 
 
     ### Utility methods for public ###
@@ -354,8 +276,10 @@ class Slot():
             weight=0
         ):
 
+        # WARNING: Direct access to attributes restricts one to these names when dependents use code?
         self.day_in_cycle = day_in_cycle
         self.ID = identifier
+        self.match_ID = -1
         # TODO: self.index = 0 # Idea to fill in later
         self.name = nice_name
         self.time_of_day = time_of_day
