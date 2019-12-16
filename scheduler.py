@@ -25,6 +25,12 @@ class ScheduleInterpreter():
     LAST_SHIFT   = '17:00'
     DOW          = 'MTWRFSU'
 
+    def __init__(self, start=FIRST_SHIFT, end=LAST_SHIFT, shift_len=SHIFT_LENGTH):
+        """ Keeping some design choices constant for compatibility, i.e. minimal breaking changes """
+        self.FIRST_SHIFT = start
+        self.LAST_SHIFT = end
+        self.SHIFT_LENGTH = shift_len
+
 
     def append_indices_to_values(self, *UID_pairs):
         """ better name is **decide_indices_for(___)**
@@ -122,7 +128,7 @@ class ScheduleInterpreter():
                     for row in daily_shifts_as_rows]
 
         row_col_UID_tuples = self.append_indices_to_values(*assigned_shifts)
-        tuples_with_nice_names = lambda (row, col, UID): \
+        tuples_with_nice_names = lambda row, col, UID: \
             (row, col, worker_names.get(self.get_ID(UID), UID))
 
         positions_for_names = map(tuples_with_nice_names, row_col_UID_tuples)
@@ -341,7 +347,7 @@ class Slot():
             self,
             day_in_cycle,
             identifier,
-            nice_name
+            nice_name,
             time_of_day,
             timeslot_class,
             cycle_size=7,
@@ -373,8 +379,9 @@ class Slot():
     def __repr__(self):
         raw_repr = self.ordered_repr
         clear_repr = map(str(), raw_repr)
+        full_repr = f"{super().__repr__()}: {' '.join(clear_repr)}"
 
-        return(f"{super().__init__()}: {" ".join(clear_repr)}")
+        return(full_repr)
 
     def __str__(self):
         return(str(self.name))
