@@ -255,9 +255,8 @@ class ScheduleInterpreter():
 
 
 class Slot():
-    """
-    The UID used in previous versions of the project redesigned in OOP fashion for cleaner function and reference
-    """
+""" The UID used in previous versions of the project
+    redesigned in OOP fashion for cleaner function and referencing """
 
     def __init__(
             self,
@@ -272,7 +271,7 @@ class Slot():
         # WARNING: Direct access to attributes restricts one to these names when dependents use code?
         self.day_in_cycle = day_in_cycle
         self.ID = identifier
-        self.match_ID = -1
+        self.match_ID = -1 # Delete if possible
         # TODO: self.index = 0 # Idea to fill in later
         self.name = nice_name
         self.time_of_day = time_of_day
