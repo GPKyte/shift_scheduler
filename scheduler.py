@@ -42,42 +42,47 @@ class ScheduleInterpreter():
     def convert_availability_to_slots(self, avail, weight_policy=None):
         slots = []
 
-        for key in avail.keys():
-            """ Note to maintainers:
+        def convert_old_DOW_format(avail):
+        """ Note to maintainers:
             incoming data may have old DOW format
-            used for keys in availability data object
-            Use the following for day_in_cycle standard """
-            try:
-                new_key = self.DOW.index(key)
-                avail[new_key] = avail[key]
-            except ValueError:
-                pass # Key not found, but this is fine
+            Use the following to change to day_in_cycle standard """
+            for key in avail.keys():
+                try:
+                    new_key = self.DOW.index(key)
+                    avail[new_key] = avail[key]
+                except ValueError:
+                    pass # Key not found, but this is fine
 
-        times_grouped_by_day = {}
+        def get_times_of_day_for_whole_cycle(avail):
+            times_grouped_by_day = {}
 
-        for key in avail.keys():
-            # Convert multiple timeranges into one list of time_of_day values
-            try:
-                day_in_cycle = int(key)
-            except ValueError:
-                pass # key was not an int, we move on
+            for key in avail.keys():
+                some_times_of_day = []
 
-            some_times_of_day = []
+                # Convert timeranges into one list of time_of_day values
+                try:
+                    day_in_cycle = int(key)
+                except ValueError:
+                    pass # key was not an int and thus not relevant
 
-            # Format looks like "10am-11:30am, 1:00pm-5:00pm"
-            for timerange in avail[day_in_cycle].split(', '):
-                start, end = timerange.split("-")
-                military_time_on = True
+                # Format looks like "10am-11:30am, 1:00pm-5:00pm"
+                for timerange in avail[day_in_cycle].split(', '):
+                    start, end = timerange.split("-")
+                    military_time_on = True
 
-                some_times_of_day +=
-                    create_time_slots(start, end, military_time_on)
+                    some_times_of_day +=
+                        create_time_slots(start, end, military_time_on)
 
-            times_grouped_by_day[key] = some_times_of_day
+                times_grouped_by_day[key] = some_times_of_day
 
+            return times_grouped_by_day
+
+        weight = 0
         nice_name = avail["name"]
         identifier = avail["id"]
         timeslot_class = avail["type"]
-        weight = 0
+        convert_old_DOW_format(avail)
+        times_grouped_by_day = get_times_of_day_for_whole_cycle(avail)
 
         for key in times_grouped_by_day.keys():
             # Make real slots from present data
@@ -123,9 +128,10 @@ class ScheduleInterpreter():
 
 
     def create_master_schedule(self, assigned_shifts):
-        slots = map(lambda shift_pair: shift_pair[0], assigned_shifts)
-        return self.make_table(slots)
+        w_slot = 0
+        slots = [pair[w_slot] for pair in assigned_shifts]
 
+        return self.make_table(slots)
 
     # Headers in top row,
     def make_table(self, slots):
@@ -152,21 +158,12 @@ class ScheduleInterpreter():
         return headers + table
 
 
-    # Take set of time ranges in human readable format
-    # and return list of ranges in integer format
-    # Used both to create shifts and worker availability
-    #
-    # Creating UID which expresses info like weekday + time
-    def flatten_time_ranges(self, work_hours):
-        flat = []
-        # TODO: Add weight to edges by storing length of consecutive shift availability
-        #       This will prioritize longer shifts in a max weight graph
-
-
-
     # Make slots from provided availability schedules
     def generate_shifts(self, type_id, *schedules):
-        
+        for availability in schedules:
+            availability["type"] = type_id
+
+            shifts += convert_availability_to_slots(availability)
 
 
     @staticmethod
@@ -211,12 +208,10 @@ class ScheduleInterpreter():
 
     @staticmethod
     def prune_empty_lists_from(table):
-        """
-        Method results from a simplification on indexing
+    """ Method results from a simplification on indexing
         Some rows should never be used and will thus be empty, remove them
         Note, this will work with either ROW/COL-MAJOR tables
-            but is originally intended for row-removal
-        """
+            but is originally intended for row-removal """
         empty = [None for x in range(len(table[0]))]
         z = 0
 
