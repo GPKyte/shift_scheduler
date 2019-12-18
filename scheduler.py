@@ -40,6 +40,7 @@ class ScheduleInterpreter():
 
 
     def convert_availability_to_slots(self, avail, weight_policy=None):
+        slots = []
 
         for key in avail.keys():
             """ Note to maintainers:
@@ -83,17 +84,14 @@ class ScheduleInterpreter():
             day_in_cycle = int(key)
 
             for TOD in times_grouped_by_day[key]:
-                args += (
+                slots += Slot(
                     day_in_cycle,
                     identifier,
                     nice_name,
                     TOD,
                     timeslot_class,
-                    cycle_size,
                     weight
                 )
-
-        slots = make_many_slots(args)
 
         return slots
 
