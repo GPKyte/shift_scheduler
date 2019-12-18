@@ -166,32 +166,6 @@ class ScheduleInterpreter():
             shifts += convert_availability_to_slots(availability)
 
 
-    @staticmethod
-    def get_DOW(slot_UID):
-        # Get Day of Week (DOW)
-        # '101A1015' -> A
-        return (slot_UID.day_in_cycle)
-
-    @staticmethod
-    def get_ID(slot_UID):
-        # ID refers to which of a type is described, e.g. ID 2 may be the third worker
-        # '1AB31015' -> AB
-        return (slot_UID.ID)
-
-    @staticmethod
-    def get_TOD(slot_UID):
-        # Get Time of Day (TOD)
-        # '2005ABCD' -> ABCD
-        return (slot_UID.time_of_day)
-
-    @staticmethod
-    def get_type(slot_UID):
-        # 'A0911015' -> A
-        return (slot_UID.type)
-
-
-    ### Utility methods for public ###
-
     # Avoiding loop of fxn calls with use of *args
     @staticmethod
     def index_elements(*args):
