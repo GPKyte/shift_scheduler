@@ -39,6 +39,66 @@ class ScheduleInterpreter():
         return ScheduleInterpreter.index_elements(*schedules)
 
 
+    def convert_availability_to_slots(self, avail, weight_policy=None):
+
+        for key in avail.keys():
+            """ Note to maintainers:
+            incoming data may have old DOW format
+            used for keys in availability data object
+            Use the following for day_in_cycle standard """
+            try:
+                new_key = self.DOW.index(key)
+                avail[new_key] = avail[key]
+            except ValueError:
+                pass # Key not found, but this is fine
+
+        times_grouped_by_day = {}
+
+        for key in avail.keys():
+            # Convert multiple timeranges into one list of time_of_day values
+            try:
+                day_in_cycle = int(key)
+            except ValueError:
+                pass # key was not an int, we move on
+
+            some_times_of_day = []
+
+            # Format looks like "10am-11:30am, 1:00pm-5:00pm"
+            for timerange in avail[day_in_cycle].split(', '):
+                start, end = timerange.split("-")
+                military_time_on = True
+
+                some_times_of_day +=
+                    create_time_slots(start, end, military_time_on)
+
+            times_grouped_by_day[key] = some_times_of_day
+
+        nice_name = avail["name"]
+        identifier = avail["id"]
+        timeslot_class = avail["type"]
+        cycle_size = max_day_in_cycle
+        weight = 0
+
+        for key in times_grouped_by_day.keys():
+            # Make real slots from present data
+            day_in_cycle = int(key)
+
+            for TOD in times_grouped_by_day[key]:
+                args += (
+                    day_in_cycle,
+                    identifier,
+                    nice_name,
+                    TOD,
+                    timeslot_class,
+                    cycle_size,
+                    weight
+                )
+
+        slots = make_many_slots(args)
+
+        return slots
+
+
     # TODO: simplify by forcing military time
     def create_time_slots(self, start_inclusive, end_exclusive, military_time=False):
         """ Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30 """
@@ -101,11 +161,7 @@ class ScheduleInterpreter():
     #
     # Creating UID which expresses info like weekday + time
     def flatten_time_ranges(self, work_hours):
-        day_id = 0
         flat = []
-
-        # TODO: decrease indentation, yikes.
-        # TODO: Replace UID with OOP solution
         # TODO: Add weight to edges by storing length of consecutive shift availability
         #       This will prioritize longer shifts in a max weight graph
 
