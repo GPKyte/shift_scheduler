@@ -76,7 +76,6 @@ class ScheduleInterpreter():
         nice_name = avail["name"]
         identifier = avail["id"]
         timeslot_class = avail["type"]
-        cycle_size = max_day_in_cycle
         weight = 0
 
         for key in times_grouped_by_day.keys():
@@ -300,7 +299,6 @@ class Slot():
             nice_name,
             time_of_day,
             timeslot_class,
-            cycle_size=7,
             weight=0
         ):
 
@@ -312,7 +310,6 @@ class Slot():
         self.name = nice_name
         self.time_of_day = time_of_day
         self.type = timeslot_class
-        self.cycle_size = cycle_size
         self.weight = weight
 
         self.ordered_repr = [
