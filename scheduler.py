@@ -164,7 +164,7 @@ class ScheduleInterpreter():
 
 
     # Make slots from provided availability schedules
-    def generate_shifts(self, type_id, *schedules):
+    def make_slots(self, type_id, *schedules):
         shifts = []
         schedules = self.assign_id(schedules)
 

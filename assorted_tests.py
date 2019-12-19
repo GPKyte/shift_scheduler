@@ -59,7 +59,7 @@ class TestMachine():
     # Helper method, not an actual test
     def __generate_schedule__(self, workers):
         s_slots = self.scheduler.create_time_slots('10:00', '24:00')
-        w_slots = self.scheduler.generate_shifts(
+        w_slots = self.scheduler.make_slots(
             ScheduleInterpreter.TYPE_WORKER, *workers
         )
         ID_schedules = self.scheduler.assign_id(workers)

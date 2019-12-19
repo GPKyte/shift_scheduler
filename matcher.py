@@ -122,8 +122,8 @@ def make_matching(availability_file):
     scheduler = ScheduleInterpreter()
     workers = ScheduleInterpreter.TYPE_WORKER
     shifts  = ScheduleInterpreter.TYPE_SHIFT
-    w_slots = scheduler.generate_shifts(workers, *worker_availability)
-    s_slots = scheduler.generate_shifts(shifts, position1_shifts, position2_shifts)
+    w_slots = scheduler.make_slots(workers, *worker_availability)
+    s_slots = scheduler.make_slots(shifts, position1_shifts, position2_shifts)
 
     # Map ids in UIDs to worker names
     ID_2_slotname = {slot.id: str(slot) for slot in w_slots}
