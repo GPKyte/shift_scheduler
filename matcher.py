@@ -106,7 +106,7 @@ def make_matching(availability_file):
     worker_availability = json.loads(file.read())
     file.close()
 
-    worker1_shifts = worker2_shifts = {
+    position1_shifts = position2_shifts = {
         # Each time I see this I think about a quick concise generator,
         # but what if the content changes for only some days? So keep it simple
         'M': '10:00-17:00',
@@ -123,17 +123,14 @@ def make_matching(availability_file):
     workers = ScheduleInterpreter.TYPE_WORKER
     shifts  = ScheduleInterpreter.TYPE_SHIFT
     w_slots = scheduler.generate_shifts(workers, *worker_availability)
-    s_slots = scheduler.generate_shifts(shifts, worker1_shifts, worker2_shifts)
+    s_slots = scheduler.generate_shifts(shifts, position1_shifts, position2_shifts)
 
-    # TODO: Get input on where to keep responsibility of ID, clean code smell
     # Map ids in UIDs to worker names
-    ID_schedules = scheduler.assign_id(worker_availability)
-    name_id_pairs = [(w, ID_schedules[w]['Name']) for w in ID_schedules.keys()]
-    ID_names = dict(name_id_pairs)
+    ID_2_slotname = {slot.id: str(slot) for slot in w_slots}
 
     # TODO: Find the bug that causes an empty line to be in output
     assignments = assign_shifts(w_slots, s_slots)
-    table = scheduler.create_master_schedule(assignments, ID_names)
+    table = scheduler.create_master_schedule(assignments, ID_2_slotname)
 
     output_file = open('new_schedule.csv', 'w')
     output_file.write(as_CSV(table))
