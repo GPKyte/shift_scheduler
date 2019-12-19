@@ -18,8 +18,8 @@ import json
 # Make pairs of all matches using psuedo hash-join on equality
 # Returns list of pairs (tuples)
 def match_pairs(left, right, get_key):
-    left_keys = map(get_key, left)
-    right_keys = map(get_key, right)
+    left_keys = list(map(get_key, left))
+    right_keys = list(map(get_key, right))
 
     list_of_lists = [[] for w in range(len(left_keys))]
     join_zone = dict(zip(left_keys, list_of_lists))
@@ -33,6 +33,16 @@ def match_pairs(left, right, get_key):
             pairs.append( (each_item, right[w]) )
 
     return pairs
+
+
+
+# High-level readable function to join two sets of UIDs
+# RETURN matched UIDs as 2-tuples
+def match_workers_to_shifts(worker_slots, shift_slots):
+    def get_key_from_a_slot(slot):
+        return int(slot)
+
+    return match_pairs(worker_slots, shift_slots, get_key_from_a_slot)
 
 
 # Functional method to reverse direction of dictionary
@@ -64,12 +74,10 @@ def as_CSV(table):
 # High-level readable function to join two sets of UIDs
 # RETURN matched UIDs as 2-tuples
 def match_workers_to_shifts(worker_slots, shift_slots):
-    # Matching edges by Time of Day
-    # TODO: debate senselessly about wasted function calls to .get_TOD()
-    pairs = match_pairs(worker_slots, shift_slots,
-        lambda slot: ScheduleInterpreter.get_TOD(slot))
+    def get_key_from_a_slot(slot):
+        return int(slot)
 
-    return pairs
+    return match_pairs(worker_slots, shift_slots, get_key_from_a_slot)
 
 
 # Pretty cut and dry method here to save file in format solver expects
