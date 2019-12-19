@@ -4,9 +4,6 @@
 # Towards the end of assigning them shifts that provide maximum
 # coverage of all work hours
 #
-# This is admittedly brittle as some assumptions that work for
-# the client have been hard-coded as simplifications in this version.
-#
 # This problem is reduced to Bipartite Graphs & Job Matching,
 # This is done at a "slot" based level. Look into SCHEDULER.PY
 # for more information on time range interpretation of availabilities
@@ -62,22 +59,11 @@ def reverse_keys_and_values(mapping):
 def as_CSV(table):
     str_table = []
 
-    # TODO: Consider simplifying to remove this for loop?
     for each_row in table:
-        str_table.append(
-            map(lambda entry: str(entry), each_row))
+        table_cells_as_strings = list(map(str, each_row))
+        lines.append(",".join(table_cells_as_strings))
 
-    rows = [','.join(row) for row in str_table]
-    return ('\n'.join(rows))
-
-
-# High-level readable function to join two sets of UIDs
-# RETURN matched UIDs as 2-tuples
-def match_workers_to_shifts(worker_slots, shift_slots):
-    def get_key_from_a_slot(slot):
-        return int(slot)
-
-    return match_pairs(worker_slots, shift_slots, get_key_from_a_slot)
+    return ("\n".join(lines))
 
 
 # Pretty cut and dry method here to save file in format solver expects
