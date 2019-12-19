@@ -43,15 +43,20 @@ class ScheduleInterpreter():
         slots = []
 
         def convert_old_DOW_format(avail):
-        """ Note to maintainers:
+            formatted_avail = {}
+            """
+            Note to maintainers:
             incoming data may have old DOW format
             Use the following to change to day_in_cycle standard """
             for key in avail.keys():
                 try:
                     new_key = self.DOW.index(key)
-                    avail[new_key] = avail[key]
+                    formatted_avail[new_key] = avail[key]
                 except ValueError:
-                    pass # Key not found, but this is fine
+                    # Key not found, but this is fine
+                    formatted_avail[key] = avail[key]
+
+            return formatted_avail
 
         def get_times_of_day_for_whole_cycle(avail):
             times_grouped_by_day = {}
@@ -63,14 +68,14 @@ class ScheduleInterpreter():
                 try:
                     day_in_cycle = int(key)
                 except ValueError:
-                    pass # key was not an int and thus not relevant
+                    break # key was not an int and thus not relevant
 
                 # Format looks like "10am-11:30am, 1:00pm-5:00pm"
                 for timerange in avail[day_in_cycle].split(', '):
                     start, end = timerange.split("-")
                     military_time_on = True
 
-                    some_times_of_day +=
+                    some_times_of_day += \
                         create_time_slots(start, end, military_time_on)
 
                 times_grouped_by_day[key] = some_times_of_day
@@ -78,10 +83,10 @@ class ScheduleInterpreter():
             return times_grouped_by_day
 
         weight = 0
-        nice_name = avail["name"]
+        nice_name = avail["Name"]
         identifier = avail["id"]
         timeslot_class = avail["type"]
-        convert_old_DOW_format(avail)
+        avail = convert_old_DOW_format(avail)
         times_grouped_by_day = get_times_of_day_for_whole_cycle(avail)
 
         for key in times_grouped_by_day.keys():
@@ -160,10 +165,17 @@ class ScheduleInterpreter():
 
     # Make slots from provided availability schedules
     def generate_shifts(self, type_id, *schedules):
-        for availability in schedules:
+        shifts = []
+        schedules = self.assign_id(schedules)
+
+        for key in schedules.keys():
+            availability = schedules[key]
+            availability["id"] = key
             availability["type"] = type_id
 
-            shifts += convert_availability_to_slots(availability)
+            shifts += self.convert_availability_to_slots(availability)
+
+        return shifts
 
 
     # Avoiding loop of fxn calls with use of *args
@@ -182,7 +194,8 @@ class ScheduleInterpreter():
 
     @staticmethod
     def prune_empty_lists_from(table):
-    """ Method results from a simplification on indexing
+        """
+        Method results from a simplification on indexing
         Some rows should never be used and will thus be empty, remove them
         Note, this will work with either ROW/COL-MAJOR tables
             but is originally intended for row-removal """
@@ -255,7 +268,8 @@ class ScheduleInterpreter():
 
 
 class Slot():
-""" The UID used in previous versions of the project
+    """
+    The UID used in previous versions of the project
     redesigned in OOP fashion for cleaner function and referencing """
 
     def __init__(
