@@ -8,9 +8,17 @@ from pprint import pprint
 def main():
     tester = TestMachine()
 
-    #tester.run_new_tests()
-    #tester.run_regression_tests()
+    try:
+        tester.run_new_tests()
+        print("SUCCESS for new test(s)")
+    except AssertionError:
+        print("FAILED new test(s)")
 
+    try:
+        tester.run_regression_tests()
+        print("SUCCESS for regression test(s)")
+    except AssertionError:
+        print("FAILED run regression test(s)")
 
 
 class TestMachine():
@@ -29,16 +37,24 @@ class TestMachine():
 
 
     def run_new_tests(self):
-        pass
+        self.test_timerange_to_slots()
+        #self.test_exclusive_slots()
+
+    def run_regression_tests(self):
+        self.test_print_table_as_csv()
+        self.test_remove_empty_rows_from_table()
+        self.test_join_lists()
+        self.test_timecheck()
 
 
-    # DELETE test_assign_id_and_index because it did not assert anything and this functionality will be rewritten
-    # DELETED test_flatten_availability because of DRY
-    # DELETED test_generate_shifts verbose with data, will break with OOP change, was not helpful in past
-    # DELETE test_generate_master_schedule bc it was too tightly coupled, will break with generalization -> parameterize?
+    # UPDATE keep idea but change impl entirely
+    def __compare_inequal_collections__(self, apples, oranges):
+        if apples != oranges:
+            print("%s \n%s apples\n" % (apples, len(apples)))
+            print("%s \n%s oranges\n" % (oranges, len(oranges)))
+            print("Apples that aren't oranges", [a for a in apples if a not in oranges])
+            print("Oranges that aren't apples", [o for o in oranges if o not in apples])
 
-    def new_unnamed_test(self):
-        pass
 
     # Helper method, not an actual test
     def __generate_schedule__(self, workers):
@@ -57,33 +73,24 @@ class TestMachine():
         return table
 
 
-    def test_flatten_time_range(self):
-        flat = self.scheduler.flatten_time_ranges(avail_M)
-        print(flat)
-
-
-    def test_exclusive_days(self):
+    def test_exclusive_slots(self):
         workers = (avail_USR, avail_WTF)
         table = self.__generate_schedule__(workers)
         print(as_CSV(table))
 
 
-    def test_shared_days(self):
+    def test_overlapping_slots(self):
         workers = (avail_T, avail_WTF)
         table = self.__generate_schedule__(workers)
         print(as_CSV(table))
 
 
-    # RENAMED
     def test_timerange_to_slots(self):
         # From 10 am to 12 pm
         result = self.scheduler.create_time_slots('10:00', '24:00')
         goal = [600, 615, 630, 645, 660, 675, 690, 705, 720, 735, 750, 765, 780, 795, 810, 825, 840, 855, 870, 885, 900, 915, 930, 945, 960, 975, 990, 1005, 1020, 1035, 1050, 1065, 1080, 1095, 1110, 1125, 1140, 1155, 1170, 1185, 1200, 1215, 1230, 1245, 1260, 1275, 1290, 1305, 1320, 1335, 1350, 1365, 1380, 1395, 1410, 1425]
 
-        try:
-            assert(result == goal)
-        except AssertionError:
-            print(result)
+        assert(result == goal)
 
     ### General testing ###
 
@@ -105,15 +112,6 @@ None,None,None,None,None,None,None"""
             assert(table == goal)
         except AssertionError:
             print(table)
-
-
-    # UPDATE keep idea but change impl entirely
-    def compare_inequal_collections(self, apples, oranges):
-        if apples != oranges:
-            print("%s \n%s apples\n" % (apples, len(apples)))
-            print("%s \n%s oranges\n" % (oranges, len(oranges)))
-            print("Apples that aren't oranges", [a for a in apples if a not in oranges])
-            print("Oranges that aren't apples", [o for o in oranges if o not in apples])
 
 
     # Test basic utility's correctness
