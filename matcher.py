@@ -11,57 +11,6 @@ from scheduler import ScheduleInterpreter
 from subprocess import check_output
 import json
 
-# Given two collections and a lambda to retrieve key
-# Make pairs of all matches using psuedo hash-join on equality
-# Returns list of pairs (tuples)
-def match_equal_key_pairs(left_list, right_list, get_key):
-    left_list.sort(key=get_key)
-    right_list.sort(key=get_key)
-
-    longer_list = left_list if len(left_list) >= len(right_list)
-
-    # Now mimc merge sort and pair off the lists
-    caravan = 0
-
-    while caravan < len(longer_list):
-        scout_left = caravan
-        scout_right = caravan
-
-        L = left_list[scout_left]
-        R = right_list[scout_right]
-
-        if L == R:
-            matched_pairs += (L, R)
-        elif L < R:
-            scout_left += 1
-        elif L > R:
-            scout_right += 1
-        else:
-            raise Exception("Unknown state, logically impossible comparison")
-
-    return matched_pairs
-
-
-# High-level readable function to join two sets of UIDs
-# RETURN matched UIDs as 2-tuples
-def select_matching_pairs(worker_slots, shift_slots):
-    def get_key_from_a_slot(slot):
-        return int(slot)
-
-    return match_equal_key_pairs(worker_slots, shift_slots, get_key_from_a_slot)
-
-
-# Functional method to reverse direction of dictionary
-# Probably not efficient, oh well. Not intended for large maps
-def reverse_keys_and_values(mapping):
-    new_map = {}
-
-    for key in mapping.keys():
-        value = mapping[key]
-        new_map[value] = key
-
-    return new_map
-
 
 # Using ROW-MAJOR table!!!!
 # That means TABLE[ROW][COLUMN] = cell
@@ -75,38 +24,35 @@ def as_CSV(table):
     return ("\n".join(lines))
 
 
-# Pretty cut and dry method here to save file in format solver expects
-# value_map: converts UIDs to indexed sequential vertices in graph
-# TODO: Change weight (third number currently 0) of edges to favor long shifts
-def save_data_for_solver(edges, num_vertices, value_map, output_file_name):
-    # First two lines will be #Vertices and #Edges
-    # Followed by lines looking like x y 0
-    # And edge is referenced by a pair of vertices and given some weight
-    output_data = [str(num_vertices), str(len(edges))]
-    output_data += ["%s %s 0" % (value_map[e[0]], value_map[e[1]])
-        for e in edges]
+# Take two sets of all unique slots that can be matched
+# By an equality of Time of Day stored in the UID of each slot
+# The method reduces the problem to Job Matching in Graph Theory
+# by treating each set of slots as partitions in a bipartite graph
+# RETURNS a set of 2-tuples that represent the assignment of an
+#   employee to a INTERVAL-sized shift, aka slot.
+def assign_shifts(w_slots, s_slots):
+    slots = sorted(w_slots + s_slots)
+    vertices = range(len(slots))
+    edges = select_matching_pairs(w_slots, s_slots) # Edges describe bipartite graph
 
-    output_file = open(output_file_name, 'w')
-    output_file.write('\n'.join(output_data))
-    output_file.close()
+    vertex_2_slot = dict(vertices, slots)
+    slot_2_vertex = dict(slots, vertices)
 
+    edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s))
+                for w, s in edges]
 
-# Designed specifically parsing the output of an Bipartite Graph match solver
-# Solver output is a collection of lines
-# RETURN set of edges remaining in subgraph as list of 2-tuples
-def parse_graph_solution(solver_output):
-        just_some_index = solver_output[0].find(':')
-        num_edges_in_result = int( solver_output[0][just_some_index + len(" "):])
-        start = 2 # Known from looking at output, completely a magic number
+    # Solve Job Matching problem
+    def decide_matching(edges, vertices):
+        save_data_for_solver(edges, len(vertices), )
+        solver_args = ['./match_bipartite_graph', '-f', , '--max']
+        solver_output = check_output(solver_args).split('\n')
+        edge_set = parse_graph_solution(solver_output)
 
-        # This is a list of string lines with 2 numbers separated by a space
-        pairs = solver_output[start:start + num_edges_in_result]
-        str_matched_edges = [pair.split(' ') for pair in pairs]
-        matched_edges = map( # to integers for table
-            lambda pair: (int(pair[0]), int(pair[1])),
-            str_matched_edges)
+    edges = decide_matching(edges, vertices)
+    assigned_shifts = [(vertex_2_slot.get(w), vertex_2_slot.get(s))
+                for w, s in edges]
 
-        return(matched_edges)
+    return(assigned_shifts)
 
 
 # The I/O high-level director of this program sourcing data and writing it back
@@ -148,45 +94,93 @@ def make_matching(availability_file):
     return(table)
 
 
-# Take two sets of all unique slots that can be matched
-# By an equality of Time of Day stored in the UID of each slot
-# The method reduces the problem to Job Matching in Graph Theory
-# by treating each set of slots as partitions in a bipartite graph
-# RETURNS a set of 2-tuples that represent the assignment of an
-#   employee to a INTERVAL-sized shift, aka slot.
-def assign_shifts(w_slots, s_slots):
-    slots = sorted(w_slots + s_slots)
-    vertices = range(len(slots))
-    edges = select_matching_pairs(w_slots, s_slots) # Edges describe bipartite graph
+# Given two collections and a lambda to retrieve key
+# Make pairs of all matches using psuedo hash-join on equality
+# Returns list of pairs (tuples)
+def match_equal_key_pairs(left_list, right_list, get_key):
+    left_list.sort(key=get_key)
+    right_list.sort(key=get_key)
 
-    vertex_2_slot = dict(vertices, slots)
-    slot_2_vertex = dict(slots, vertices)
+    longer_list = left_list if len(left_list) >= len(right_list)
 
-    edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s))
-                for w, s in edges]
+    # Now mimc merge sort and pair off the lists
+    caravan = 0
 
-    # Solve Job Matching problem
-    def decide_matching(edges, vertices):
-        save_data_for_solver(edges, len(vertices), )
-        solver_args = ['./match_bipartite_graph', '-f', , '--max']
-        solver_output = check_output(solver_args).split('\n')
-        edge_set = parse_graph_solution(solver_output)
+    while caravan < len(longer_list):
+        scout_left = caravan
+        scout_right = caravan
 
-    edges = decide_matching(edges, vertices)
-    assigned_shifts = [(vertex_2_slot.get(w), vertex_2_slot.get(s))
-                for w, s in edges]
+        L = left_list[scout_left]
+        R = right_list[scout_right]
 
-    return(assigned_shifts)
+        if L == R:
+            matched_pairs += (L, R)
+        elif L < R:
+            scout_left += 1
+        elif L > R:
+            scout_right += 1
+        else:
+            raise Exception("Unknown state, logically impossible comparison")
 
-
+    return matched_pairs
 
 
+# Designed specifically parsing the output of an Bipartite Graph match solver
+# Solver output is a collection of lines
+# RETURN set of edges remaining in subgraph as list of 2-tuples
+def parse_graph_solution(solver_output):
+        just_some_index = solver_output[0].find(':')
+        num_edges_in_result = int( solver_output[0][just_some_index + len(" "):])
+        start = 2 # Known from looking at output, completely a magic number
 
-# TODO: (Feature) Calendar integration with results
-# TODO: Polymorphism of UIDs
-def main():
-    make_matching('docs/xuMakerSpringAvailability.txt')
+        # This is a list of string lines with 2 numbers separated by a space
+        pairs = solver_output[start:start + num_edges_in_result]
+        str_matched_edges = [pair.split(' ') for pair in pairs]
+        matched_edges = map( # to integers for table
+            lambda pair: (int(pair[0]), int(pair[1])),
+            str_matched_edges)
+
+        return(matched_edges)
+
+
+# Functional method to reverse direction of dictionary
+# Probably not efficient, oh well. Not intended for large maps
+def reverse_keys_and_values(mapping):
+    new_map = {}
+
+    for key in mapping.keys():
+        value = mapping[key]
+        new_map[value] = key
+
+    return new_map
+
+
+# Pretty cut and dry method here to save file in format solver expects
+# value_map: converts UIDs to indexed sequential vertices in graph
+# TODO: Change weight (third number currently 0) of edges to favor long shifts
+def save_data_for_solver(edges, num_vertices, output_file_name):
+    # First two lines will be #Vertices and #Edges
+    # Followed by lines looking like x y 0
+    # And edge is referenced by a pair of vertices and given some weight
+    output_data = [str(num_vertices), str(len(edges))]
+    output_data += ["%s %s 0" % (value_map[e[0]], value_map[e[1]])
+        for e in edges]
+
+    output_file = open(output_file_name, 'w')
+    output_file.write('\n'.join(output_data))
+    output_file.close()
+
+
+# High-level readable function to join two sets of UIDs
+# RETURN matched UIDs as 2-tuples
+def select_matching_pairs(worker_slots, shift_slots):
+    def get_key_from_a_slot(slot):
+        return int(slot)
+
+    return match_equal_key_pairs(worker_slots, shift_slots, get_key_from_a_slot)
 
 
 if __name__ == '__main__':
-    main()
+    # TODO: (Feature) Calendar integration with results
+    make_matching('docs/xuMakerSpringAvailability.txt')
+
