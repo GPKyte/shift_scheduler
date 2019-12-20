@@ -14,32 +14,41 @@ import json
 # Given two collections and a lambda to retrieve key
 # Make pairs of all matches using psuedo hash-join on equality
 # Returns list of pairs (tuples)
-def match_pairs(left, right, get_key):
-    left_keys = list(map(get_key, left))
-    right_keys = list(map(get_key, right))
+def match_equal_key_pairs(left_list, right_list, get_key):
+    left_list.sort(key=get_key)
+    right_list.sort(key=get_key)
 
-    list_of_lists = [[] for w in range(len(left_keys))]
-    join_zone = dict(zip(left_keys, list_of_lists))
-    pairs = []
+    longer_list = left_list if len(left_list) >= len(right_list)
 
-    for w in range(len(left)):
-        join_zone[left_keys[w]].append(left[w])
+    # Now mimc merge sort and pair off the lists
+    caravan = 0
 
-    for w in range(len(right)):
-        for each_item in join_zone.get(right_keys[w],[]):
-            pairs.append( (each_item, right[w]) )
+    while caravan < len(longer_list):
+        scout_left = caravan
+        scout_right = caravan
 
-    return pairs
+        L = left_list[scout_left]
+        R = right_list[scout_right]
 
+        if L == R:
+            matched_pairs += (L, R)
+        elif L < R:
+            scout_left += 1
+        elif L > R:
+            scout_right += 1
+        else:
+            raise Exception("Unknown state, logically impossible comparison")
+
+    return matched_pairs
 
 
 # High-level readable function to join two sets of UIDs
 # RETURN matched UIDs as 2-tuples
-def match_workers_to_shifts(worker_slots, shift_slots):
+def select_matching_pairs(worker_slots, shift_slots):
     def get_key_from_a_slot(slot):
         return int(slot)
 
-    return match_pairs(worker_slots, shift_slots, get_key_from_a_slot)
+    return match_equal_key_pairs(worker_slots, shift_slots, get_key_from_a_slot)
 
 
 # Functional method to reverse direction of dictionary
