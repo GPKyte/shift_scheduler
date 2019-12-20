@@ -58,7 +58,7 @@ class TestMachine():
 
     # Helper method, not an actual test
     def __generate_schedule__(self, workers):
-        s_slots = self.scheduler.create_time_slots('10:00', '24:00')
+        s_slots = self.scheduler.create_TOD_slot_range('10:00', '24:00')
         w_slots = self.scheduler.make_slots(
             ScheduleInterpreter.TYPE_WORKER, *workers
         )
@@ -87,7 +87,7 @@ class TestMachine():
 
     def test_timerange_to_slots(self):
         # From 10 am to 12 pm
-        result = self.scheduler.create_time_slots('10:00', '24:00')
+        result = self.scheduler.create_TOD_slot_range('10:00', '24:00')
         goal = [600, 615, 630, 645, 660, 675, 690, 705, 720, 735, 750, 765, 780, 795, 810, 825, 840, 855, 870, 885, 900, 915, 930, 945, 960, 975, 990, 1005, 1020, 1035, 1050, 1065, 1080, 1095, 1110, 1125, 1140, 1155, 1170, 1185, 1200, 1215, 1230, 1245, 1260, 1275, 1290, 1305, 1320, 1335, 1350, 1365, 1380, 1395, 1410, 1425]
 
         assert(result == goal)

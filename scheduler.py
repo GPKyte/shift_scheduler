@@ -76,7 +76,7 @@ class ScheduleInterpreter():
                     military_time_on = True
 
                     some_times_of_day += \
-                        create_time_slots(start, end, military_time_on)
+                        create_TOD_slot_range(start, end, military_time_on)
 
                 times_grouped_by_day[key] = some_times_of_day
 
@@ -107,7 +107,7 @@ class ScheduleInterpreter():
 
 
     # TODO: simplify by forcing military time
-    def create_time_slots(self, start_inclusive, end_exclusive, military_time=False):
+    def create_TOD_slot_range(self, start_inclusive, end_exclusive, military_time=False):
         """ Given 13:00 and 16:50, return 13*60, 13*60 +15, ..., 16:30 """
         # TODO: Debate "duplication of code" versus readability
 
