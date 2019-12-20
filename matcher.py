@@ -155,30 +155,32 @@ def make_matching(availability_file):
 # RETURNS a set of 2-tuples that represent the assignment of an
 #   employee to a INTERVAL-sized shift, aka slot.
 def assign_shifts(w_slots, s_slots):
-    # Because our bipartite matcher requires sequential vertices
-    # We sort and index all slots to map them to vertices and recover them
-    all_slots = sorted(w_slots + s_slots)
-    value_map = dict(zip(all_slots, range(len(all_slots))))
+    slots = sorted(w_slots + s_slots)
+    vertices = range(len(slots))
+    edges = select_matching_pairs(w_slots, s_slots) # Edges describe bipartite graph
 
-    # Generate "edges" in a description of a bipartite graph
-    matchings = match_workers_to_shifts(w_slots, s_slots)
-    save_data_for_solver(matchings, len(all_slots), value_map, './docs/graph')
-    # Don't worry about leaving file behind (don't waste energy by deleting it)
+    vertex_2_slot = dict(vertices, slots)
+    slot_2_vertex = dict(slots, vertices)
+
+    edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s))
+                for w, s in edges]
 
     # Solve Job Matching problem
-    solver_args = ['./match_bipartite_graph', '-f', './docs/graph', '--max']
-    solver_output = check_output(solver_args).split('\n')
-    edge_set = parse_graph_solution(solver_output)
+    def decide_matching(edges, vertices):
+        save_data_for_solver(edges, len(vertices), )
+        solver_args = ['./match_bipartite_graph', '-f', , '--max']
+        solver_output = check_output(solver_args).split('\n')
+        edge_set = parse_graph_solution(solver_output)
 
-    try: # Revert graph vertices to slots as UIDs
-        recover = reverse_keys_and_values(value_map)
-        assignments = [(recover[e[0]], recover[e[1]]) for e in edge_set]
+    edges = decide_matching(edges, vertices)
+    assigned_shifts = [(vertex_2_slot.get(w), vertex_2_slot.get(s))
+                for w, s in edges]
 
-    except KeyError as ke:
-        print("The value, %s, does not map to a UID" % (se))
-        raise ke
+    return(assigned_shifts)
 
-    return(assignments)
+
+
+
 
 # TODO: (Feature) Calendar integration with results
 # TODO: Polymorphism of UIDs
