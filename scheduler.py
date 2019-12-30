@@ -25,6 +25,9 @@ class ScheduleInterpreter():
     LAST_SHIFT   = '17:00'
     DOW          = 'MTWRFSU'
 
+    # Flags for weighting slots
+    LONG_SHIFT   = 0b1
+
     def __init__(self, start=FIRST_SHIFT, end=LAST_SHIFT, shift_len=SHIFT_LENGTH):
         """ Keeping some design choices constant for compatibility, i.e. minimal breaking changes """
         self.FIRST_SHIFT = start
@@ -59,7 +62,7 @@ class ScheduleInterpreter():
             return formatted_avail
 
         def get_times_of_day_for_whole_cycle(avail):
-            times_grouped_by_day = {}
+            times_by_day = {}
 
             for key in avail.keys():
                 some_times_of_day = []
@@ -78,22 +81,26 @@ class ScheduleInterpreter():
                     some_times_of_day += \
                         create_TOD_slot_range(start, end, military_time_on)
 
-                times_grouped_by_day[key] = some_times_of_day
+                times_by_day[key] = some_times_of_day
 
-            return times_grouped_by_day
+
+            return times_by_day
+
 
         weight = 0
         nice_name = avail["Name"]
         identifier = avail["id"]
         timeslot_class = avail["type"]
         avail = convert_old_DOW_format(avail)
-        times_grouped_by_day = get_times_of_day_for_whole_cycle(avail)
+        times_by_day = get_times_of_day_for_whole_cycle(avail)
 
-        for key in times_grouped_by_day.keys():
+        for key in times_by_day.keys():
             # Make real slots from present data
             day_in_cycle = int(key)
+            weighted_TODs = decide_weights(times_by_day[key], flags)
 
-            for TOD in times_grouped_by_day[key]:
+            for TOD, weight in weighted_TODs:
+
                 slots += Slot(
                     day_in_cycle,
                     identifier,
@@ -215,13 +222,14 @@ class ScheduleInterpreter():
     def make_slots(self, type_id, *schedules):
         shifts = []
         schedules = self.assign_id(schedules)
+        flags = [LONG_SHIFT]
 
         for key in schedules.keys():
             availability = schedules[key]
             availability["id"] = key
             availability["type"] = type_id
 
-            shifts += self.convert_availability_to_slots(availability)
+            shifts += self.convert_availability_to_slots(availability, flags)
 
         return shifts
 
@@ -382,7 +390,7 @@ class Slot():
     def __lt__(self):
         return(int(self) < int(other))
 
-    def validation_check_passes():
+    def validation_check_passes(self):
         return False
 
     def make_many_slots(tuples_of_init_args):
