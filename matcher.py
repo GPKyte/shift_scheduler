@@ -43,8 +43,10 @@ def assign_shifts(w_slots, s_slots):
 
     # Solve Job Matching problem
     def decide_matching(edges, vertices):
-        save_data_for_solver(edges, len(vertices), )
-        solver_args = ['./match_bipartite_graph', '-f', , '--max']
+        path2file = "./docs/xuMakerSpringAvailability"
+
+        save_data_for_solver(edges, len(vertices), path2file)
+        solver_args = ['./match_bipartite_graph', '-f', path2file, '--max']
         solver_output = check_output(solver_args).split('\n')
         edge_set = parse_graph_solution(solver_output)
 
@@ -101,7 +103,10 @@ def match_equal_key_pairs(left_list, right_list, get_key):
     left_list.sort(key=get_key)
     right_list.sort(key=get_key)
 
-    longer_list = left_list if len(left_list) >= len(right_list)
+    if (len(left_list) >= len(right_list)):
+        longer_list = left_list
+    else:
+        longer_list = right_list
 
     # Now mimc merge sort and pair off the lists
     caravan = 0
