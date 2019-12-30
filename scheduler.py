@@ -138,6 +138,54 @@ class ScheduleInterpreter():
 
         return self.make_table(slots)
 
+
+    def decide_weights(undecided, policy_flags):
+        # Shifts are expecfted to come in sorted order
+        def favor_long_uninterrupted_shifts(shifts):
+            # some check ahead, apply, move forward process
+            # Count length of consecutive shifts, add that weight
+            WEIGHT = 1
+            shift_interval = self.SHIFT_LENGTH
+            weight_factor = shift_interval
+            weighted_shifts = []
+            s_index = 0
+
+            while s_index < len(shifts):
+                this_shift = shifts[s_index]
+                last_shift = shifts[s_index - 1]
+
+                is_next_shift = (last_shift + shift_interval) == this_shift
+
+                if is_next_shift:
+                    """
+                    Using a reference based approach to update weight
+                    of all shifts in consecutive range without revisiting any
+                    """
+                    weight = weighted_shifts[s_index - 1][WEIGHT]
+                    weight += weight_factor
+
+                else:
+                    weight = SlotWeight(0)
+
+                weighted_shifts[s_index] = (this_shift, weight)
+
+            weight += weight_factor
+
+
+        """
+        Scope of context is one day in cycle for one employee
+        """
+        if len(undecided) < 1:
+            raise ValueError("List too short")
+
+        # Choose policy for weights
+        if policy_flags & self.LONG_SHIFT:
+            return favor_long_uninterrupted_shifts(shifts)
+        else:
+            # 0-weight policy is default
+            return [(num, 0) for num in undecided]
+
+
     # Headers in top row,
     def make_table(self, slots):
         def slot_to_col(slot):
