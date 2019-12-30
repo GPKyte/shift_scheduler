@@ -129,18 +129,18 @@ def match_equal_key_pairs(left_list, right_list, get_key):
 # Solver output is a collection of lines
 # RETURN set of edges remaining in subgraph as list of 2-tuples
 def parse_graph_solution(solver_output):
-        just_some_index = solver_output[0].find(':')
-        num_edges_in_result = int( solver_output[0][just_some_index + len(" "):])
-        start = 2 # Known from looking at output, completely a magic number
+    just_some_index = solver_output[0].find(':')
+    num_edges_in_result = int( solver_output[0][just_some_index + len(" "):])
+    start = 2 # Known from looking at output, completely a magic number
 
-        # This is a list of string lines with 2 numbers separated by a space
-        pairs = solver_output[start:start + num_edges_in_result]
-        str_matched_edges = [pair.split(' ') for pair in pairs]
-        matched_edges = map( # to integers for table
-            lambda pair: (int(pair[0]), int(pair[1])),
-            str_matched_edges)
+    # This is a list of string lines with 2 numbers separated by a space
+    pairs = solver_output[start:start + num_edges_in_result]
+    str_matched_edges = [pair.split(' ') for pair in pairs]
+    matched_edges = map( # to integers for table
+        lambda pair: (int(pair[0]), int(pair[1])),
+        str_matched_edges)
 
-        return(matched_edges)
+    return(matched_edges)
 
 
 # Functional method to reverse direction of dictionary
