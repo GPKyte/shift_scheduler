@@ -154,50 +154,75 @@ class ScheduleInterpreter():
 
 
     def decide_weights(self, undecided, policy_flags):
-        # Shifts are expecfted to come in sorted order
-        def favor_long_uninterrupted_shifts(shifts):
-            # some check ahead, apply, move forward process
-            # Count length of consecutive shifts, add that weight
-            WEIGHT = 1
-            shift_interval = self.SHIFT_LENGTH
-            weight_factor = shift_interval
-            weighted_shifts = []
-            s_index = 0
-
-            while s_index < len(shifts):
-                this_shift = shifts[s_index]
-                last_shift = shifts[s_index - 1]
-
-                is_next_shift = (last_shift + shift_interval) == this_shift
-
-                if is_next_shift:
-                    """
-                    Using a reference based approach to update weight
-                    of all shifts in consecutive range without revisiting any
-                    """
-                    weight = weighted_shifts[s_index - 1][WEIGHT]
-                    weight += weight_factor
-
-                else:
-                    weight = SlotWeight(0)
-
-                weighted_shifts[s_index] = (this_shift, weight)
-
-            weight += weight_factor
-
-
         """
-        Scope of context is one day in cycle for one employee
+        Shifts are expecfted to come in sorted order
+        Deciding weight for one day in cycle for one employee
         """
         if len(undecided) < 1:
             raise ValueError("List too short")
 
+        def favor_long_uninterrupted_shifts(shifts):
+            """ Group shifts together and use length of shift as weight """
+
+            all_slot_times = self.create_TOD_slot_range("0:00", "24:00", military_time=True)
+            shift_times = list(map(lambda slot: slot.time_of_day, shifts))
+            groups = self.group_sequential_ranges(all_slot_times, shift_times)
+
+            # Connect grouped time ranges to original slots
+            get_shwifty = dict(zip(shift_times, shifts))
+
+            for g in groups:
+                for slot_time in g:
+                    get_shwifty[slot_time].weight = len(g)
+
+            return shifts
+
         # Choose policy for weights
         if self.LONG_SHIFT in policy_flags:
             return favor_long_uninterrupted_shifts(undecided)
-        else:
-            # 0-weight policy is default
+
+        else: # 0-weight policy is default
             return [(num, 0) for num in undecided]
+
+    def group_sequential_ranges(self, all_possible_nums, ungrouped_nums):
+
+        try: # to sanitize data
+            assert(len(all_possible_nums) >= len(ungrouped_nums))
+            assert(len(ungrouped_nums) > 0)
+            assert(min(ungrouped_nums) >= min(all_possible_nums))
+            assert(max(ungrouped_nums) <= max(all_possible_nums))
+        except AssertionError:
+            raise ValueError("Invalid data provided. Cannot group as-is")
+
+        all_possible_nums = iter(sorted(all_possible_nums))
+        ungrouped_nums = iter(sorted(ungrouped_nums))
+        EOL = "End"
+
+        ranges = list()
+        cur_range = list()
+        candidate = next(ungrouped_nums)
+        reference = next(all_possible_nums)
+
+        while candidate is not EOL:
+            cur_range = list()
+
+            if candidate > reference:
+                reference = next(all_possible_nums)
+                continue
+
+            if candidate < reference:
+                candidate = next(candidate, EOL)
+                continue
+
+            while candidate == reference:
+                cur_range.append(candidate)
+
+                candidate = next(ungrouped_nums, EOL)
+                reference = next(all_possible_nums, None)
+
+            ranges.append(cur_range)
+
+        return(ranges)
 
 
     # TODO: Update docs
