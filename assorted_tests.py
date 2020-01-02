@@ -178,15 +178,12 @@ class TestMachine():
             [None, None, None, None, None, None, None]]
         table = as_CSV(row_major_table)
 
-        goal = """M,T,W,R,F,S,U
-10100600,None,None,None,None,None,None
-None,None,None,None,None,None,None
-None,None,None,None,None,None,None"""
+        goal = f"M,T,W,R,F,S,U\n10100600,None,None,None,None,None,None\nNone,None,None,None,None,None,None\nNone,None,None,None,None,None,None"
 
         try:
             assert(table == goal)
         except AssertionError:
-            print(table)
+            log_debug(table)
 
 
     # Test basic utility's correctness
@@ -281,11 +278,18 @@ None,None,None,None,None,None,None"""
 
     def inspect_slot_translation(self):
         slot_args = par_baked_slots[0]
-        s = Slot(*slot_args)
-        str(s)
-        int(s)
-        print(s)
-        repr(s)
+        slots = Slot(*slot_args), Slot(validation_on=False)
+        count = 1
+
+        for s in slots:
+            log_verbose(f"Inspecting Slot #{count}")
+            log_verbose(f"\t{'String':<30}{str(s)}")
+            log_verbose(f"\t{'Integer':<30}{int(s)}")
+            log_verbose(f"\t{'Default':<30}{repr(s)}")
+            count += 1
+
+        return None
+
 
 
 if __name__ == '__main__':
