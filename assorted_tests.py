@@ -290,6 +290,16 @@ class TestMachine():
 
         return None
 
+    def log_verbose(self, verbose_content):
+        if self.VERBOSE:
+            log(verbose_content)
+
+    def log_debug(self, debugging_content):
+        if self.DEBUG:
+            log(debugging_content)
+
+    def log(printable_data):
+        print(printable_data)
 
 
 if __name__ == '__main__':
