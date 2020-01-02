@@ -52,18 +52,18 @@ short_avail = {
 dirty_avail_1 = {
     'NAME': 'dirty one',
     "Hours I want to work": 5,
-    0: all_day,
-    2: "13:00-17:00,",
-    8: "9:00-23:00",
+    "0": all_day,
+    "2": "13:00-17:00",
+    "8": "9:00-23:00",
     "F": all_day
 }
 clean_avail_1 = {
     'name': 'dirty one',
     'hours': 5,
-    0: all_day,
-    2: "13:00-17:00",
-    8: "9:00-23:00",
-    5: all_day
+    "0": all_day,
+    "2": "13:00-17:00",
+    "8": "9:00-23:00",
+    "4": all_day
 }
 
 WORKER = 1

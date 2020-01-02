@@ -41,29 +41,42 @@ class ScheduleInterpreter():
         # TODO: Refactor ID scheme
         return ScheduleInterpreter.index_elements(*schedules)
 
+    def convert_old_format(self, avail):
 
-    # TODO: santize and fix format before continuing
+        for key in list(avail.keys()):
+            str_key = str(key)
+
+            if str_key in self.DOW:
+                """ Input may use (old) DOW format
+                So, use the following to change to day_in_cycle standard """
+                new_key = str(self.DOW.index(str_key))
+
+            elif str_key.lower() == "hours that i want to work":
+                new_key = "hours"
+
+            elif str_key.lower() == "hours i want to work":
+                new_key = "hours"
+
+            elif str_key.lower() != str_key:
+                new_key = str_key.lower()
+
+            else:
+                new_key = str_key
+
+            avail[new_key] = avail[key]
+
+            if new_key != key:
+                avail.pop(key)
+
+        return avail
+
+
     def convert_availability_to_slots(self, avail, weight_policy=None):
         slots = []
 
-        # TODO: expand function to just sanitize, ore pull that into it's own function per usual
-        def convert_old_DOW_format(avail):
-            formatted_avail = {}
-            """
-            Note to maintainers:
-            incoming data may have old DOW format
-            Use the following to change to day_in_cycle standard """
-            for key in avail.keys():
-                try:
-                    new_key = self.DOW.index(key)
-                    formatted_avail[new_key] = avail[key]
-                except ValueError:
-                    # Key not found, but this is fine
-                    formatted_avail[key] = avail[key]
-
-            return formatted_avail
-
-        # TODO: map key names to lowercase
+        def sanitize(avail):
+            assert(len(avail) > 0)
+            convert_old_format(avail)
 
         def get_times_of_day_for_whole_cycle(avail):
             times_by_day = {}
@@ -91,12 +104,10 @@ class ScheduleInterpreter():
             return times_by_day
 
 
-        # TODO: Change all to lowercase attributes
         weight = 0
-        nice_name = avail["Name"]
+        nice_name = avail["name"]
         identifier = avail["id"]
         timeslot_class = avail["type"]
-        avail = convert_old_DOW_format(avail)
         times_by_day = get_times_of_day_for_whole_cycle(avail)
 
         for key in times_by_day.keys():

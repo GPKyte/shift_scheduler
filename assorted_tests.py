@@ -65,8 +65,7 @@ class TestMachine():
 
     def run_new_tests(self):
         try:
-            self.test_join_lists()
-            self.test_timecheck()
+            self.test_sanitize_input()
             self.test_exclusive_slots()
             print("SUCCESS for new test(s)")
 
@@ -76,6 +75,8 @@ class TestMachine():
 
     def run_regression_tests(self):
         try:
+            self.test_join_lists()
+            self.test_timecheck()
             self.test_group_sequential_ranges()
             self.test_timerange_to_slots()
             self.test_weight_policies()
@@ -169,10 +170,13 @@ class TestMachine():
         pass
     def test_sanitize_input(self):
         dirty_json = dirty_avail_1
-        clean_json = self.scheduler.convert_old_DOW_format(dirty_json)
+        clean_json = self.scheduler.convert_old_format(dirty_json)
         goal_json = clean_avail_1
 
-        assert(clean_json == goal_json)
+        try:
+            assert(clean_json == goal_json)
+        except AssertionError:
+            raise AssertionError(f"Cleaned data does not met standards:\nResult: {clean_json}\nGoal: {goal_json}")
 
     def test_interpret_match_results(self):
         stubbed_results = clean_solver_output
