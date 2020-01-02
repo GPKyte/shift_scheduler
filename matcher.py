@@ -47,7 +47,7 @@ def assign_shifts(w_slots, s_slots):
 
         save_data_for_solver(edges, len(vertices), path2file)
         solver_args = ['./match_bipartite_graph', '-f', path2file, '--max']
-        solver_output = check_output(solver_args).split('\n')
+        solver_output = check_output(solver_args).decode("utf-8").split('\n')
         edge_set = parse_graph_solution(solver_output)
 
     edges = decide_matching(edges, vertices)
