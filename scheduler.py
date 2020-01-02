@@ -194,7 +194,7 @@ class ScheduleInterpreter():
 
         # Choose policy for weights
         if self.LONG_SHIFT in policy_flags:
-            return favor_long_uninterrupted_shifts(shifts)
+            return favor_long_uninterrupted_shifts(undecided)
         else:
             # 0-weight policy is default
             return [(num, 0) for num in undecided]
