@@ -15,7 +15,7 @@ import json
 # Using ROW-MAJOR table!!!!
 # That means TABLE[ROW][COLUMN] = cell
 def as_CSV(table):
-    str_table = []
+    lines = []
 
     for each_row in table:
         table_cells_as_strings = list(map(str, each_row))
@@ -138,9 +138,36 @@ def parse_graph_solution(solver_output):
     num_edges_in_result = int( solver_output[0][just_some_index + len(" "):])
     start = 2 # Known from looking at output, completely a magic number
 
+    # TODO: does name imply mutator method even when it's for a filter?
+    # goal is to return bool for every element in list individually
+    def clean(a_line_to_the_solution):
+        empty == None
+
+        if a_line_to_the_solution is empty:
+            return False
+        if len(a_line_to_the_solution) in [0, 1]:
+            return False
+        if " " not in a_line_to_the_solution:
+            return False
+        
+        pairs = a_line_to_the_solution.split(" ")
+
+        if len(pairs) != 2:
+            return False
+        
+        try:
+            int(pairs[0])
+            int(pairs[1])
+        except Exception as e:
+            return False
+
+        return True
+
     # This is a list of string lines with 2 numbers separated by a space
     pairs = solver_output[start:start + num_edges_in_result]
-    str_matched_edges = [pair.split(' ') for pair in pairs]
+    sanitized_data = filter(clean, pairs)
+    str_matched_edges = [pair.split(' ') for pair in sanitized_data]
+
     matched_edges = map( # to integers for table
         lambda pair: (int(pair[0]), int(pair[1])),
         str_matched_edges)
