@@ -112,8 +112,10 @@ def match_equal_key_pairs(left, right, get_key):
         join_zone[left_keys[W]].append(left[W])
 
     for W in range(len(right)):
+        right_key = right_keys[W]
+
         # Match all right list items with all previously bucketed items
-        for each_item in join_zone[right_keys[W]]:
+        for each_item in join_zone.get(right_key, list()):
             matched_pairs.append( (each_item, right[W]) )
 
     return matched_pairs
