@@ -35,8 +35,8 @@ def assign_shifts(w_slots, s_slots):
     vertices = range(len(slots))
     edges = select_matching_pairs(w_slots, s_slots) # Edges describe bipartite graph
 
-    vertex_2_slot = dict(vertices, slots)
-    slot_2_vertex = dict(slots, vertices)
+    vertex_2_slot = dict(zip(vertices, slots))
+    slot_2_vertex = dict(zip(slots, vertices))
 
     edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s))
                 for w, s in edges]
@@ -47,7 +47,7 @@ def assign_shifts(w_slots, s_slots):
 
         save_data_for_solver(edges, len(vertices), path2file)
         solver_args = ['./match_bipartite_graph', '-f', path2file, '--max']
-        solver_output = check_output(solver_args).split('\n')
+        solver_output = check_output(solver_args).decode("utf-8").split('\n')
         edge_set = parse_graph_solution(solver_output)
 
     edges = decide_matching(edges, vertices)
@@ -112,8 +112,10 @@ def match_equal_key_pairs(left, right, get_key):
         join_zone[left_keys[W]].append(left[W])
 
     for W in range(len(right)):
+        right_key = right_keys[W]
+
         # Match all right list items with all previously bucketed items
-        for each_item in join_zone[right_keys[W]]:
+        for each_item in join_zone.get(right_key, list()):
             matched_pairs.append( (each_item, right[W]) )
 
     return matched_pairs
