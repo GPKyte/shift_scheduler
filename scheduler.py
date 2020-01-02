@@ -408,7 +408,7 @@ class Slot():
 
     def make_many_slots(tuples_of_init_args):
         # Opportunity for Vectorization
-        return []
+        return [Slot(*args) for args in tuples_of_init_args]
 
 
 
