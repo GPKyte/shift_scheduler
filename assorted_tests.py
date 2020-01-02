@@ -328,9 +328,12 @@ class TestMachine():
 
 
     def inspect_slot_translation(self):
-        slot_args = par_baked_slots[0]
-        slots = Slot(*slot_args), Slot(validation_on=False)
+
         count = 1
+        slots = [
+            Slot(*slot_args, validation_on=False)
+                for slot_args in par_baked_slots[0:3]
+        ]
 
         for s in slots:
             log_verbose(f"Inspecting Slot #{count}")
