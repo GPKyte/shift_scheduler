@@ -295,11 +295,10 @@ class TestMachine():
             flags = [self.scheduler.LONG_SHIFT]
             interval = ScheduleInterpreter.SHIFT_LENGTH
 
-            possible_shift_times = [
-                range(12*60, 15*60, interval), # len = 12
-                range(16*60, 17*60, interval), # len = 4
-                range(10*60, 10*60 + 30, interval), # len = 2
-            ]
+            possible_shift_times = []
+            possible_shift_times += range(12*60, 15*60, interval) # len = 12
+            possible_shift_times += range(16*60, 17*60, interval) # len = 4
+            possible_shift_times += range(10*60, 10*60 + 30, interval) # len = 2
 
             slots = [
                 Slot(time_of_day=TOD, validation_on=False)
