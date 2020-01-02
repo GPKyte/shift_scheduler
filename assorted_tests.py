@@ -4,8 +4,10 @@ from share_data import *
 
 # Test file for validating conversions between I/O
 from pprint import pprint
-
 from inspect import getframeinfo, stack
+
+VERBOSE = True
+DEBUG = True
 
 def debuginfo(function_calls_before_now = 1):
     caller = getframeinfo(stack()[function_calls_before_now][0])
@@ -328,9 +330,12 @@ class TestMachine():
 
 
     def inspect_slot_translation(self):
-        slot_args = par_baked_slots[0]
-        slots = Slot(*slot_args), Slot(validation_on=False)
+
         count = 1
+        slots = [
+            Slot(*slot_args, validation_on=False)
+                for slot_args in par_baked_slots[0:3]
+        ]
 
         for s in slots:
             log_verbose(f"Inspecting Slot #{count}")
