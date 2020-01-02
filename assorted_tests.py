@@ -63,6 +63,7 @@ class TestMachine():
 
     def run_new_tests(self):
         try:
+            self.test_group_sequential_ranges()
             self.test_timerange_to_slots()
             self.test_weight_policies()
             self.inspect_slot_translation()
@@ -220,6 +221,19 @@ class TestMachine():
         except AssertionError:
             log_debug(table)
 
+
+    def test_group_sequential_ranges(self):
+        A = list(range(0, 100, 1))
+        B = list(range(40, 80, 1))
+        C = list(range(90, 100, 1))
+        D = list(range(0, 35, 1))
+
+        all_possible = A
+        ungrouped = B + C + D
+        goal = [D, B, C]
+        result = self.scheduler.group_sequential_ranges(all_possible, ungrouped)
+
+        assert(result == goal)
 
     # Test basic utility's correctness
     def test_remove_empty_rows_from_table(self):
