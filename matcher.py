@@ -35,8 +35,8 @@ def assign_shifts(w_slots, s_slots):
     vertices = range(len(slots))
     edges = select_matching_pairs(w_slots, s_slots) # Edges describe bipartite graph
 
-    vertex_2_slot = dict(vertices, slots)
-    slot_2_vertex = dict(slots, vertices)
+    vertex_2_slot = dict(zip(vertices, slots))
+    slot_2_vertex = dict(zip(slots, vertices))
 
     edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s))
                 for w, s in edges]
