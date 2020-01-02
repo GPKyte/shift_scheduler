@@ -34,8 +34,9 @@ def main():
     tester = TestMachine()
 
     try:
-        tester.run_new_tests()
         tester.run_regression_tests()
+        tester.run_new_tests()
+
     except Exception as e:
         raise e
     else:
@@ -78,7 +79,6 @@ class TestMachine():
             self.test_group_sequential_ranges()
             self.test_timerange_to_slots()
             self.test_weight_policies()
-            self.inspect_slot_translation()
             self.test_print_table_as_csv()
             self.test_remove_empty_rows_from_table()
 
@@ -86,6 +86,11 @@ class TestMachine():
         except Exception:
             print("FAILED run regression test(s)")
             raise
+
+
+    def run_inspection_tests(self):
+        self.inspect_slot_translation()
+        raw_input()
 
 
     # UPDATE keep idea but change impl entirely
@@ -239,6 +244,7 @@ class TestMachine():
             assert(result == goal)
         except AssertionError:
             raise AssertionError(f"Resulting sequential ranges are incorrect:\n{result}")
+
 
     # Test basic utility's correctness
     def test_remove_empty_rows_from_table(self):
