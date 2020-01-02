@@ -104,17 +104,13 @@ class TestMachine():
 
     # Helper method, not an actual test
     def __generate_schedule__(self, workers):
-        s_slots = self.scheduler.create_TOD_slot_range('10:00', '24:00')
         w_slots = self.scheduler.make_slots(
-            ScheduleInterpreter.TYPE_WORKER, *workers
-        )
-        ID_schedules = self.scheduler.assign_id(workers)
-        ID_mapping = dict(
-            [(w, ID_schedules[w]['Name']) for w in ID_schedules.keys()]
-        )
+            ScheduleInterpreter.TYPE_WORKER, *workers)
+        s_slots = self.scheduler.make_slots(
+            ScheduleInterpreter.TYPE_SHIFT, open_position_for_makerspace)
 
         shifts = assign_shifts(w_slots, s_slots)
-        table = self.scheduler.create_master_schedule(shifts, ID_mapping)
+        table = self.scheduler.create_master_schedule(shifts)
 
         return table
 

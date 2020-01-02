@@ -2,6 +2,15 @@
 # Reason for move was arbitrary, i.e. mostly for appearance and possibility of other shared, global vars
 
 all_day = '10:00-17:00'
+open_position_for_makerspace = {
+    0: all_day,
+    1: all_day,
+    2: all_day,
+    3: all_day,
+    4: all_day,
+    5: all_day,
+    6: all_day
+}
 avail_M = {
     'Name': 'A_M',
     'Hours': '1',
