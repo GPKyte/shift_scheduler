@@ -200,27 +200,44 @@ class ScheduleInterpreter():
             return [(num, 0) for num in undecided]
 
     def group_sequential_ranges(self, all_possible_nums, ungrouped_nums):
+
+        try: # to sanitize data
+            assert(len(all_possible_nums) >= len(ungrouped_nums))
+            assert(len(ungrouped_nums) > 0)
+            assert(min(ungrouped_nums) >= min(all_possible_nums))
+            assert(max(ungrouped_nums) <= max(all_possible_nums))
+        except AssertionError:
+            raise ValueError("Invalid data provided. Cannot group as-is")
+
         all_possible_nums = iter(sorted(all_possible_nums))
         ungrouped_nums = iter(sorted(ungrouped_nums))
+        EOL = "End"
 
-        ranges = {}
-        cur_range = []
+        ranges = list()
+        cur_range = list()
+        candidate = next(ungrouped_nums)
+        reference = next(all_possible_nums)
 
-        for reference in all_possible_nums:
-            candidate = next(ungrouped_nums)
+        while candidate is not EOL:
+            cur_range = list()
 
-            while candidate < reference:
-                # Don't expect this loop to run for the intended use of fxn
-                candidate = next(ungrouped_nums)
+            if candidate > reference:
+                reference = next(all_possible_nums)
+                continue
 
-            if candidate == reference:
+            if candidate < reference:
+                candidate = next(candidate, EOL)
+                continue
+
+            while candidate == reference:
                 cur_range.append(candidate)
 
-            else: # candidate > reference
-                ranges.update({cur_range})
-                cur_range = []
+                candidate = next(ungrouped_nums, EOL)
+                reference = next(all_possible_nums, None)
 
-        return(list(ranges))
+            ranges.append(cur_range)
+
+        return(ranges)
 
 
     # TODO: Update docs
