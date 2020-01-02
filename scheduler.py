@@ -140,7 +140,7 @@ class ScheduleInterpreter():
         start_in_minutes = self.round_off(starting_minute, interval)
         end_in_minutes = self.round_off(ending_minute, interval)
 
-        return(range(start_in_minutes, end_in_minutes, interval))
+        return(list(range(start_in_minutes, end_in_minutes, interval)))
 
 
     # TODO: Change this method to just take 1-tuples, not pairs
