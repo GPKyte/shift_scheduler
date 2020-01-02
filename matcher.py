@@ -100,8 +100,13 @@ def make_matching(availability_file):
 # Make pairs of all matches using psuedo hash-join on equality
 # Returns list of pairs (tuples)
 def match_equal_key_pairs(left_list, right_list, get_key):
-    left_list.sort(key=get_key)
-    right_list.sort(key=get_key)
+    try:
+        left_list.sort(key=get_key)
+        right_list.sort(key=get_key)
+    except AttributeError as e:
+        msg = f"Could not sort lists because {e.args[0]}:\n\
+                Left: {left_list}\nRight: {right_list}"
+        raise AttributeError(msg)
 
     if (len(left_list) >= len(right_list)):
         longer_list = left_list

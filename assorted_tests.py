@@ -259,8 +259,8 @@ class TestMachine():
 
 
     def test_join_lists(self):
-        listA = range(0, 100)
-        listB = range(0, 100, 5)
+        listA = list(range(0, 100))
+        listB = list(range(0, 100, 5))
         listAB = match_equal_key_pairs(listA, listB, lambda x: x)
         goal_pairs = [(a, a) for a in range(0, 100, 5)]
 
