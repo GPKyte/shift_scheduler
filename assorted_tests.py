@@ -233,7 +233,10 @@ class TestMachine():
         goal = [D, B, C]
         result = self.scheduler.group_sequential_ranges(all_possible, ungrouped)
 
-        assert(result == goal)
+        try:
+            assert(result == goal)
+        except AssertionError:
+            raise AssertionError(f"Resulting sequential ranges are incorrect:\n{result}")
 
     # Test basic utility's correctness
     def test_remove_empty_rows_from_table(self):
@@ -308,11 +311,11 @@ class TestMachine():
             self.scheduler.decide_weights(slots, flags)
 
             assert(len(possible_shift_times) == len(slots))
-            assert(slots[0].weight == 0)
+            assert(slots[0].weight == 12)
             assert(slots[11].weight == 12)
-            assert(slots[12].weight == 0)
+            assert(slots[12].weight == 4)
             assert(slots[15].weight == 4)
-            assert(slots[16].weight == 0)
+            assert(slots[16].weight == 2)
             assert(slots[-1].weight == 2)
 
         # Test the policies conscisely below
