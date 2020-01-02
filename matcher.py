@@ -96,41 +96,25 @@ def make_matching(availability_file):
     return(table)
 
 
-# Given two collections and a lambda to retrieve key
+# Given two collections and a proceedure to retrieve key
 # Make pairs of all matches using psuedo hash-join on equality
-# Returns list of pairs (tuples)
-def match_equal_key_pairs(left_list, right_list, get_key):
-    try:
-        left_list.sort(key=get_key)
-        right_list.sort(key=get_key)
-    except AttributeError as e:
-        msg = f"Could not sort lists because {e.args[0]}:\n\
-                Left: {left_list}\nRight: {right_list}"
-        raise AttributeError(msg)
+# Returns list of 2-tuples
+def match_equal_key_pairs(left, right, get_key):
+    left_keys = list(map(get_key, left))
+    right_keys = list(map(get_key, right))
 
-    if (len(left_list) >= len(right_list)):
-        longer_list = left_list
-    else:
-        longer_list = right_list
+    list_of_lists = [[] for W in range(len(left_keys))]
+    join_zone = dict(zip(left_keys, list_of_lists))
+    matched_pairs = list()
 
-    # Now mimc merge sort and pair off the lists
-    caravan = 0
+    # Create buckets indexed by left list keys
+    for W in range(len(left)):
+        join_zone[left_keys[W]].append(left[W])
 
-    while caravan < len(longer_list):
-        scout_left = caravan
-        scout_right = caravan
-
-        L = left_list[scout_left]
-        R = right_list[scout_right]
-
-        if L == R:
-            matched_pairs += (L, R)
-        elif L < R:
-            scout_left += 1
-        elif L > R:
-            scout_right += 1
-        else:
-            raise Exception("Unknown state, logically impossible comparison")
+    for W in range(len(right)):
+        # Match all right list items with all previously bucketed items
+        for each_item in join_zone[right_keys[W]]:
+            matched_pairs.append( (each_item, right[W]) )
 
     return matched_pairs
 
