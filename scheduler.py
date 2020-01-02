@@ -45,6 +45,7 @@ class ScheduleInterpreter():
     def convert_availability_to_slots(self, avail, weight_policy=None):
         slots = []
 
+        # TODO: expand function to just sanitize, ore pull that into it's own function per usual
         def convert_old_DOW_format(avail):
             formatted_avail = {}
             """
@@ -60,6 +61,8 @@ class ScheduleInterpreter():
                     formatted_avail[key] = avail[key]
 
             return formatted_avail
+
+        # TODO: map key names to lowercase
 
         def get_times_of_day_for_whole_cycle(avail):
             times_by_day = {}
@@ -87,6 +90,7 @@ class ScheduleInterpreter():
             return times_by_day
 
 
+        # TODO: Change all to lowercase attributes
         weight = 0
         nice_name = avail["Name"]
         identifier = avail["id"]
@@ -139,10 +143,13 @@ class ScheduleInterpreter():
         return(range(start_in_minutes, end_in_minutes, interval))
 
 
+    # TODO: Change this method to just take 1-tuples, not pairs
+    # TODO: Consider whether this breaks API and whether it matter because we still have a low method to use for testing :)
     def create_master_schedule(self, assigned_shifts):
         w_slot = 0
         slots = [pair[w_slot] for pair in assigned_shifts]
 
+        # TODO: self.make_table(slots, find_index_proceedure), def fxn to pass in
         return self.make_table(slots)
 
 
@@ -193,6 +200,11 @@ class ScheduleInterpreter():
             return [(num, 0) for num in undecided]
 
 
+    # TODO: Update docs
+    # TODO: Pull out Slot-specific Impl details into a proceedure
+    # TODO: Test both the index generation proceedure and the table dimensions
+    # TODO: Make empty table option?? Maybe not worth time
+    # TODO: Move the headers to the create_master_schedule method?
     # Headers in top row,
     def make_table(self, slots):
         def slot_to_col(slot):
@@ -208,6 +220,7 @@ class ScheduleInterpreter():
         table = [[minutes_to_text(row)] + [None for col in columns]
                     for row in rows]
 
+        # deciding slot position with mapping from earlier
         for slot in slots:
             row_index = slot.time_of_day // self.SHIFT_LENGTH
             col_index = columns.find(slot_to_col(slot))
