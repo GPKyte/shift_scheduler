@@ -42,6 +42,7 @@ class ScheduleInterpreter():
         return ScheduleInterpreter.index_elements(*schedules)
 
 
+    # TODO: santize and fix format before continuing
     def convert_availability_to_slots(self, avail, weight_policy=None):
         slots = []
 
