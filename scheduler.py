@@ -153,7 +153,7 @@ class ScheduleInterpreter():
         return self.make_table(slots)
 
 
-    def decide_weights(undecided, policy_flags):
+    def decide_weights(self, undecided, policy_flags):
         # Shifts are expecfted to come in sorted order
         def favor_long_uninterrupted_shifts(shifts):
             # some check ahead, apply, move forward process
@@ -342,11 +342,11 @@ class Slot():
 
     def __init__(
             self,
-            day_in_cycle,
-            identifier,
-            nice_name,
-            time_of_day,
-            timeslot_class,
+            day_in_cycle=0,
+            identifier=0,
+            nice_name="No Name",
+            time_of_day=0,
+            timeslot_class=0,
             weight=0,
             validation_on=True
         ):
@@ -370,7 +370,7 @@ class Slot():
             self.time_of_day
         ]
 
-        if TESTING:
+        if validation_on:
             assert(self.validation_check_passes())
 
 
