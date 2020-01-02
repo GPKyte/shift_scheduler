@@ -4,8 +4,10 @@ from share_data import *
 
 # Test file for validating conversions between I/O
 from pprint import pprint
-
 from inspect import getframeinfo, stack
+
+VERBOSE = True
+DEBUG = True
 
 def debuginfo(function_calls_before_now = 1):
     caller = getframeinfo(stack()[function_calls_before_now][0])
