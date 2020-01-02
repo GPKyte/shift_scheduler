@@ -284,7 +284,7 @@ class TestMachine():
             possible_shift_times = [
                 range(12*60, 15*60, interval), # len = 12
                 range(16*60, 17*60, interval), # len = 4
-                range(10*60, 10.5*60, interval), # len = 2
+                range(10*60, 10*60 + 30, interval), # len = 2
             ]
 
             slots = [
