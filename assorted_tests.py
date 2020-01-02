@@ -42,7 +42,7 @@ class TestMachine():
 
     def run_new_tests(self):
         self.test_timerange_to_slots()
-        self.test_weight_policy()
+        self.test_weight_policies()
         self.inspect_slot_translation()
         #self.test_exclusive_slots()
 
@@ -243,22 +243,40 @@ None,None,None,None,None,None,None"""
                 print("%s -> %s != %s" % (test, test_cases[test], checked))
 
 
-    def test_weight_policy(self):
-        start = "10:00"
-        end = "3:00"
-        military_time_on = False
+    def test_weight_policies(self):
 
         def test_long_shift():
             flags = [self.scheduler.LONG_SHIFT]
+            interval = ScheduleInterpreter.SHIFT_LENGTH
 
-            possible_shift_times = scheduler.create_TOD_slot_range(
-                start, end, military_time_on
-            )
+            possible_shift_times = [
+                range(12*60, 15*60, interval), # len = 12
+                range(16*60, 17*60, interval), # len = 4
+                range(10*60, 10.5*60, interval), # len = 2
+            ]
 
-            self.scheduler.decide_weights(possible_shift_times)
+            slots = [
+                Slot(time_of_day=TOD, validation_on=False)
+                    for TOD in possible_shift_times
+            ]
 
-        # TODO: Finish test
-        pass
+            self.scheduler.decide_weights(slots, flags)
+
+            assert(len(possible_shift_times) == len(slots))
+            assert(slots[0].weight == 0)
+            assert(slots[11].weight == 12)
+            assert(slots[12].weight == 0)
+            assert(slots[15].weight == 4)
+            assert(slots[16].weight == 0)
+            assert(slots[-1].weight == 2)
+
+        # Test the policies conscisely below
+        try:
+            test_long_shift()
+        except AssertionError as e:
+            log_debug(str(e))
+
+            return False
 
 
     def inspect_slot_translation(self):
