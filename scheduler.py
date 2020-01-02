@@ -26,7 +26,7 @@ class ScheduleInterpreter():
     DOW          = 'MTWRFSU'
 
     # Flags for weighting slots
-    LONG_SHIFT   = 0b1
+    LONG_SHIFT   = 1
 
     def __init__(self, start=FIRST_SHIFT, end=LAST_SHIFT, shift_len=SHIFT_LENGTH):
         """ Keeping some design choices constant for compatibility, i.e. minimal breaking changes """
@@ -260,7 +260,7 @@ class ScheduleInterpreter():
     def make_slots(self, type_id, *schedules):
         shifts = []
         schedules = self.assign_id(schedules)
-        flags = [LONG_SHIFT]
+        flags = [self.LONG_SHIFT]
 
         for key in schedules.keys():
             availability = schedules[key]
