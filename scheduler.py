@@ -335,7 +335,6 @@ class ScheduleInterpreter():
 
         return result
 
-
 class Slot():
     """
     The UID used in previous versions of the project
@@ -348,7 +347,8 @@ class Slot():
             nice_name,
             time_of_day,
             timeslot_class,
-            weight=0
+            weight=0,
+            validation_on=True
         ):
 
         # WARNING: Direct access to attributes restricts one to these names when dependents use code?
