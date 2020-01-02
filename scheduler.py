@@ -199,6 +199,29 @@ class ScheduleInterpreter():
             # 0-weight policy is default
             return [(num, 0) for num in undecided]
 
+    def group_sequential_ranges(self, all_possible_nums, ungrouped_nums):
+        all_possible_nums = iter(sorted(all_possible_nums))
+        ungrouped_nums = iter(sorted(ungrouped_nums))
+
+        ranges = {}
+        cur_range = []
+
+        for reference in all_possible_nums:
+            candidate = next(ungrouped_nums)
+
+            while candidate < reference:
+                # Don't expect this loop to run for the intended use of fxn
+                candidate = next(ungrouped_nums)
+
+            if candidate == reference:
+                cur_range.append(candidate)
+
+            else: # candidate > reference
+                ranges.update({cur_range})
+                cur_range = []
+
+        return(list(ranges))
+
 
     # TODO: Update docs
     # TODO: Pull out Slot-specific Impl details into a proceedure
