@@ -60,14 +60,11 @@ class TestMachine():
         self.scheduler = ScheduleInterpreter()
 
 
-
     def run_new_tests(self):
         try:
-            self.test_group_sequential_ranges()
-            self.test_timerange_to_slots()
-            self.test_weight_policies()
-            self.inspect_slot_translation()
-            #self.test_exclusive_slots()
+            self.test_join_lists()
+            self.test_timecheck()
+            self.test_exclusive_slots()
             print("SUCCESS for new test(s)")
 
         except Exception:
@@ -76,10 +73,13 @@ class TestMachine():
 
     def run_regression_tests(self):
         try:
+            self.test_group_sequential_ranges()
+            self.test_timerange_to_slots()
+            self.test_weight_policies()
+            self.inspect_slot_translation()
             self.test_print_table_as_csv()
             self.test_remove_empty_rows_from_table()
-            self.test_join_lists()
-            self.test_timecheck()
+
             print("SUCCESS for regression test(s)")
         except Exception:
             print("FAILED run regression test(s)")
