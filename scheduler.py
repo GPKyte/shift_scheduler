@@ -193,7 +193,7 @@ class ScheduleInterpreter():
             raise ValueError("List too short")
 
         # Choose policy for weights
-        if policy_flags & self.LONG_SHIFT:
+        if self.LONG_SHIFT in policy_flags:
             return favor_long_uninterrupted_shifts(shifts)
         else:
             # 0-weight policy is default
