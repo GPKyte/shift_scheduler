@@ -401,7 +401,7 @@ class Slot():
 
     def __repr__(self):
         raw_repr = self.ordered_repr
-        clear_repr = map(str(), raw_repr)
+        clear_repr = map(str, raw_repr)
         full_repr = f"{super().__repr__()}: {' '.join(clear_repr)}"
 
         return(full_repr)
