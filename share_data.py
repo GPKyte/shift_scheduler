@@ -40,3 +40,44 @@ short_avail = {
     'Hours': '1',
     'M': '10:00-13:00'
 }
+dirty_avail_1 = {
+    'NAME': 'dirty one',
+    "Hours I want to work": 5,
+    0: all_day,
+    2: "13:00-17:00,",
+    8: "9:00-23:00",
+    "F": all_day
+}
+clean_avail_1 = {
+    'name': 'dirty one',
+    'hours': 5,
+    0: all_day,
+    2: "13:00-17:00",
+    8: "9:00-23:00",
+    5: all_day
+}
+
+WORKER = 1
+POSITION = 2
+par_baked_slots = [
+    # (day_in_cycle, identifier, nice_name, time_of_day, timeslot_class, weight=0),
+    (0, 0, "Slot 0", 1000, WORKER, 0),
+    (2, 0, "Slot 0", 1000, WORKER, 0),
+    (7, 0, "Slot 0", 1000, WORKER, 0),
+    (0, 1, "Slot 1", 1000, POSITION, 0),
+    (2, 1, "Slot 1", 1000, POSITION, 0),
+    (7, 1, "Slot 1", 1000, POSITION, 0),
+    (0, 2, "Slot 2", 1000, WORKER, 5),
+    (2, 2, "Slot 2", 1000, WORKER, 5),
+    (7, 2, "Slot 2", 1000, WORKER, 5)
+]
+
+clean_solver_output = [
+"Optimal matching cost: 14",
+"Edges in the matching:",
+"0 1",
+"2 3",
+"4 7",
+"5 6",
+"8 9"
+]

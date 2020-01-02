@@ -21,6 +21,9 @@ def main():
         print("FAILED run regression test(s)")
 
 
+def count(objects):
+    return(len(objects))
+
 class TestMachine():
     """
     Functional class that may maintain it's own data and methods
@@ -36,8 +39,11 @@ class TestMachine():
         self.scheduler = ScheduleInterpreter()
 
 
+
     def run_new_tests(self):
         self.test_timerange_to_slots()
+        self.test_weight_policy()
+        self.inspect_slot_translation()
         #self.test_exclusive_slots()
 
     def run_regression_tests(self):
@@ -73,17 +79,43 @@ class TestMachine():
         return table
 
 
+    ### General testing ###
+
+    def test_variable_table_size(self):
+        start_minute = 10 * 60
+        end_minute = 17 * 60
+        interval = 15
+        times_of_day = range(start_minute, end_minute, interval)
+
+        width_makerspace = 7 * shifts_at_makerspace_per_day # Week day repeat and two per day
+        height_makerspace = len(times_of_day)
+
+        def find_index_in(indexable_data):
+            col = random.randint(0, shifts_at_makerspace_per_day)
+            row = random.randint(0, count(times_of_day))
+
+            return (row, col)
+
+        T = ScheduleInterpreter.make_empty_table(times_of_day)
+        ScheduleInterpreter.fill_empty_table(T, find_index_in, times_of_day)
+
+        assert(len(T) == len(times_of_day)) # Row-major
+        same_length = len(T[0])
+
+        for row in T:
+            assert(len[row] == same_length)
+
+
+
     def test_exclusive_slots(self):
         workers = (avail_USR, avail_WTF)
         table = self.__generate_schedule__(workers)
         print(as_CSV(table))
 
-
     def test_overlapping_slots(self):
         workers = (avail_T, avail_WTF)
         table = self.__generate_schedule__(workers)
         print(as_CSV(table))
-
 
     def test_timerange_to_slots(self):
         # From 10 am to 12 pm
@@ -92,8 +124,51 @@ class TestMachine():
 
         assert(result == goal)
 
-    ### General testing ###
+    def test_invalid_slot_failure(self):
+        pass
+    def test_favor_long_shifts(self):
+        pass
+    def test_sanitize_input(self):
+        dirty_json = dirty_avail_1
+        clean_json = self.scheduler.convert_old_DOW_format(dirty_json)
+        goal_json = clean_avail_1
 
+        assert(clean_json == goal_json)
+
+    def test_interpret_match_results(self):
+        stubbed_results = clean_solver_output
+        edges_1 = parse_graph_solution(stubbed_results)
+
+        stubbed_results = clean_solver_output + [""] # Had problem with empty line once
+        edges_2 = parse_graph_solution(stubbed_results)
+
+        assert(len(edges_1) > 0)
+        assert(len(edges_1) == len(edges_2))
+        assert(len(edges_1[0]) == 2)
+
+        int(edges_1[0][0])
+        int(edges_1[0][1])
+
+        for e in edges_1:
+            assert(e[0] != e[1])
+
+        return True
+
+    def test_edge_generation(self):
+        A = range(0, 1000, 1)
+        B = range(0, 1000, 2)
+        C = match_equal_key_pairs(A, B, int)
+
+        assert(len(C) == 500)
+        assert(B == C)
+
+        X = range(990, 1606, 15)
+        Y = range(1500, 1651, 15)
+        Z = match_equal_key_pairs(X, Y, int)
+
+        assert(len(Z) == 7) # 15*107 = 1605; 15*100 = 1500
+        assert(Z[0] == 1500)
+        assert(Z[-1] == 1605)
 
     def test_print_table_as_csv(self):
         row_major_table = \
@@ -137,7 +212,7 @@ None,None,None,None,None,None,None"""
     def test_join_lists(self):
         listA = range(0, 100)
         listB = range(0, 100, 5)
-        listAB = match_pairs(listA, listB, lambda x: x)
+        listAB = match_equal_key_pairs(listA, listB, lambda x: x)
         goal_pairs = [(a, a) for a in range(0, 100, 5)]
 
         try:
@@ -166,6 +241,33 @@ None,None,None,None,None,None,None"""
                 assert(test_cases[test] == checked)
             except AssertionError:
                 print("%s -> %s != %s" % (test, test_cases[test], checked))
+
+
+    def test_weight_policy(self):
+        start = "10:00"
+        end = "3:00"
+        military_time_on = False
+
+        def test_long_shift():
+            flags = [self.scheduler.LONG_SHIFT]
+
+            possible_shift_times = scheduler.create_TOD_slot_range(
+                start, end, military_time_on
+            )
+
+            self.scheduler.decide_weights(possible_shift_times)
+
+        # TODO: Finish test
+        pass
+
+
+    def inspect_slot_translation(self):
+        slot_args = par_baked_slots[0]
+        s = Slot(*slot_args)
+        str(s)
+        int(s)
+        print(s)
+        repr(s)
 
 
 if __name__ == '__main__':
