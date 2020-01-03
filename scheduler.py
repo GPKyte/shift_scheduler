@@ -263,7 +263,7 @@ class ScheduleInterpreter():
 
         # To export nicely as CSV file, make a ROW-MAJOR table
         # Note: since table is small, performance gains from locality negligible
-        table = [[minutes_to_text(row)] + [None for col in columns]
+        table = [[self.minutes_to_text(row)] + [None for col in columns]
                     for row in rows]
 
         # deciding slot position with mapping from earlier
