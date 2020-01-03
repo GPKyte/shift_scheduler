@@ -268,31 +268,6 @@ class ScheduleInterpreter():
         return times_by_day
 
 
-    # TODO: Update docs
-    # TODO: Pull out Slot-specific Impl details into a proceedure
-    # TODO: Test both the index generation proceedure and the table dimensions
-    # TODO: Make empty table option?? Maybe not worth time
-    # TODO: Move the headers to the make_schedule method?
-    # Headers in top row,
-    def make_table(self, slots):
-
-
-        # To export nicely as CSV file, make a ROW-MAJOR table
-        # Note: since table is small, performance gains from locality negligible
-        table = [[self.minutes_to_text(row)] + [None for col in columns]
-                    for row in rows]
-
-        # deciding slot position with mapping from earlier
-        for slot in slots:
-            row_index = slot.time_of_day // self.SHIFT_LENGTH
-            col_index = columns.find(slot_to_col(slot))
-            table[row_index][col_index] = str(slot)
-
-         # Remove empty rows
-
-        return headers + table
-
-
     def make_table(self, cells):
         width = max([C.col for C in cells])
         height = max([C.row for C in cells])
