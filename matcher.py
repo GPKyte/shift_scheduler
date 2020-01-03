@@ -72,6 +72,7 @@ def make_matching(availability_file):
     position1_shifts = position2_shifts = {
         # Each time I see this I think about a quick concise generator,
         # but what if the content changes for only some days? So keep it simple
+        'name': 'Open Position',
         'M': '10:00-17:00',
         'T': '10:00-17:00',
         'W': '10:00-17:00',
@@ -88,12 +89,9 @@ def make_matching(availability_file):
     w_slots = scheduler.make_slots(workers, *worker_availability)
     s_slots = scheduler.make_slots(shifts, position1_shifts, position2_shifts)
 
-    # Map ids in UIDs to worker names
-    ID_2_slotname = {slot.id: str(slot) for slot in w_slots}
-
     # TODO: Find the bug that causes an empty line to be in output
     assignments = assign_shifts(w_slots, s_slots)
-    table = scheduler.make_schedule(assignments, ID_2_slotname)
+    table = scheduler.make_schedule(assignments)
 
     output_file = open('new_schedule.csv', 'w')
     output_file.write(as_CSV(table))
@@ -168,9 +166,6 @@ def parse_graph_solution(solver_output):
     matched_edges = map( # to integers for table
         lambda pair: (int(pair[0]), int(pair[1])),
         str_matched_edges)
-
-    track_var("solver_output", solver_output)
-    track_var("sanitized_data", sanitized_data)
 
     return(matched_edges)
 
