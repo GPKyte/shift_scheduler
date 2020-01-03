@@ -393,12 +393,12 @@ class Slot():
 
     def __init__(
             self,
-            day_in_cycle=0,
-            identifier=0,
-            nice_name="No Name",
-            time_of_day=0,
-            timeslot_class=0,
-            weight=0,
+            day_in_cycle=-1,
+            identifier=-1,
+            nice_name=None,
+            time_of_day=-1,
+            timeslot_class=-1,
+            weight=-1,
             validation_on=True
         ):
 
@@ -455,7 +455,14 @@ class Slot():
         return(int(self) < int(other))
 
     def validation_check_passes(self):
-        return False
+        assert(self.day_in_cycle is not None)
+        assert(self.ID is not None)
+        assert(self.name is not None)
+        assert(self.time_of_day >= 0)
+        assert(self.type >= 0)
+        assert(self.weight >= 0)
+
+        return True
 
     def make_many_slots(tuples_of_init_args):
         # Opportunity for Vectorization
