@@ -258,7 +258,7 @@ class ScheduleInterpreter():
         # Note: intentionally make and prune excess of rows to simplify code
         hours_in_day = 24
         rows = range(0, hours_in_day * 60, self.SHIFT_LENGTH)
-        columns = sorted(set(map(slot_to_col(), slots)))
+        columns = sorted(set(map(slot_to_col, slots)))
         headers = ["Time of Day"] + [c["day"] for c in columns]
 
         # To export nicely as CSV file, make a ROW-MAJOR table
