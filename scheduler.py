@@ -122,14 +122,44 @@ class ScheduleInterpreter():
         return(list(range(start_in_minutes, end_in_minutes, interval)))
 
 
-    # TODO: Change this method to just take 1-tuples, not pairs
-    # TODO: Consider whether this breaks API and whether it matter because we still have a low method to use for testing :)
-    def make_schedule(self, assigned_shifts):
-        w_slot = 0
-        slots = [pair[w_slot] for pair in assigned_shifts]
+    def make_schedule(self, assignments):
+        worker_slot = 0
+        shift_slot = 1
 
-        # TODO: self.make_table(slots, find_index_proceedure), def fxn to pass in
-        return self.make_table(slots)
+        shifts = assignments[shift_slot]
+        cells = list()
+
+        def to_col(slot):
+            return (slot.day_in_cycle, slot.ID)
+        columns = list(set(map(to_col, shifts)))
+
+        def to_row(slot):
+            return (slot.time_of_day)
+        rows = list(set(map(to_row, shifts)))
+
+        for shift in assignments:
+            W = shift[worker_slot]
+            S = shift[shift_slot]
+            C = Cell(
+                row=(S.time_of_day // self.SHIFT_LENGTH),
+                col=(columns.index(to_col(S))),
+                value=W
+            )
+            cells.append(C)
+
+        schedule_table = self.make_table(cells)
+
+        # Use following loop to Add Time of Dat Column to Left Side of table
+        assert(len(rows) == len(table))
+        for row_index in range(len(rows)):
+            time_of_day = rows[row_index][0]
+            schedule_table[row_index].insert(index=0, object=time_of_day)
+
+        # Add headers to table
+        headers = ["Time of Day"] + [C[0] for C in columns]
+        schedule = headers + schedule_table
+
+        return schedule
 
 
     def decide_weights(self, undecided, policy_flags):
@@ -245,14 +275,7 @@ class ScheduleInterpreter():
     # TODO: Move the headers to the make_schedule method?
     # Headers in top row,
     def make_table(self, slots):
-        def slot_to_col(slot):
-            return ({"day": slot.day_in_cycle, "id": slot.ID})
 
-        # Note: intentionally make and prune excess of rows to simplify code
-        hours_in_day = 24
-        rows = range(0, hours_in_day * 60, self.SHIFT_LENGTH)
-        columns = sorted(set(map(slot_to_col, slots)))
-        headers = ["Time of Day"] + [c["day"] for c in columns]
 
         # To export nicely as CSV file, make a ROW-MAJOR table
         # Note: since table is small, performance gains from locality negligible
@@ -265,9 +288,22 @@ class ScheduleInterpreter():
             col_index = columns.find(slot_to_col(slot))
             table[row_index][col_index] = str(slot)
 
-        self.prune_empty_lists_from(table) # Remove empty rows
+         # Remove empty rows
 
         return headers + table
+
+
+    def make_table(self, cells):
+        width = max([C.col for C in cells])
+        height = max([C.row for C in cells])
+        table = [[None for col in range(width)]
+                    for row in range(height)]
+
+        table[cell.row][cell.col] = str(cell.value)
+        self.prune_empty_lists_from(table)
+
+        return table
+
 
 
     # Make slots from provided availability schedules
@@ -374,6 +410,13 @@ class ScheduleInterpreter():
             result = "%s:%s" % (hr_proper, m)
 
         return result
+
+class Cell():
+    """ Purely a data object """
+    def __init__(self, row, col, value):
+        self.row = row
+        self.col = col
+        self.value = value
 
 class Slot():
     """
