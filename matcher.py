@@ -50,6 +50,8 @@ def assign_shifts(w_slots, s_slots):
         solver_output = check_output(solver_args).decode("utf-8").split('\n')
         edge_set = parse_graph_solution(solver_output)
 
+        return edge_set
+
     edges = decide_matching(edges, vertices)
     assigned_shifts = [(vertex_2_slot.get(w), vertex_2_slot.get(s))
                 for w, s in edges]
