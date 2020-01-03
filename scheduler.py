@@ -87,7 +87,11 @@ class ScheduleInterpreter():
         slots = list()
 
         for key in times_by_day.keys():
-            day_in_cycle = int(key)
+            try: # filter by integer keys
+                day_in_cycle = int(key)
+            except ValueError as e:
+                log_debug(f"Key in times_by_day is not integer: {key}")
+                continue
 
             for TOD in times_by_day[key]:
                 P = Slot(day_in_cycle, ID, name, TOD, slot_type, weight)
