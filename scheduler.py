@@ -80,7 +80,7 @@ class ScheduleInterpreter():
         self.sanitize_availability(avail)
 
         weight = 0
-        times_by_day = self.get_times_of_day_for_whole_cycle(avail)
+        times_by_day = self.get_times_of_day_for_one_day(avail)
         nice_name = avail.get("name", None) # If not provided, not needed
         identifier = avail["id"]
         timeslot_class = avail["type"]
