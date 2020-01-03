@@ -272,7 +272,7 @@ class ScheduleInterpreter():
 
     # Make slots from provided availability schedules
     def make_slots(self, type_id, *schedules):
-        log_verbose(schedules)
+        logg(schedules, NOT_NOW)
 
         shifts = []
         flags = [self.LONG_SHIFT]
@@ -417,7 +417,7 @@ class Slot():
     def __repr__(self):
         raw_repr = self.ordered_repr
         clear_repr = map(str, raw_repr)
-        full_repr = f"{super().__repr__()}: {' '.join(clear_repr)}"
+        full_repr = f"{'.'.join(clear_repr)}"
 
         return(full_repr)
 
@@ -440,8 +440,11 @@ class Slot():
     def __gt__(self, other):
         return(int(self) > int(other))
 
-    def __lt__(self):
+    def __lt__(self, other):
         return(int(self) < int(other))
+
+    def __hash__(self):
+        return(id(self))
 
     def validation_check_passes(self):
         assert(self.day_in_cycle is not None)
