@@ -90,9 +90,8 @@ class ScheduleInterpreter():
         for key in times_by_day.keys():
             # Make real slots from present data
             day_in_cycle = int(key)
-            weighted_TODs = decide_weights(times_by_day[key], flags)
 
-            for TOD, weight in weighted_TODs:
+            for TOD in times_by_day[key]:
 
                 slots += Slot(
                     day_in_cycle,
