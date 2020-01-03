@@ -39,7 +39,7 @@ class ScheduleInterpreter():
     def assign_id(schedules):
         # Attempt to control ID for UIDs
         # TODO: Refactor ID scheme
-        return ScheduleInterpreter.index_elements(*schedules)
+        return ScheduleInterpreter.index_elements(schedules)
 
     # Modifies avail in-place
     def convert_old_format(self, avail):
@@ -278,12 +278,14 @@ class ScheduleInterpreter():
 
     # Make slots from provided availability schedules
     def make_slots(self, type_id, *schedules):
-        shifts = []
-        schedules = self.assign_id(schedules)
-        flags = [self.LONG_SHIFT]
+        log_verbose(schedules)
 
-        for key in schedules.keys():
-            availability = schedules[key]
+        shifts = []
+        flags = [self.LONG_SHIFT]
+        id_2_schedule = self.assign_id(list(schedules))
+
+        for key in id_2_schedule.keys():
+            availability = id_2_schedule[key]
             availability["id"] = key
             availability["type"] = type_id
 
@@ -292,11 +294,10 @@ class ScheduleInterpreter():
         return shifts
 
 
-    # Avoiding loop of fxn calls with use of *args
     @staticmethod
-    def index_elements(*args):
+    def index_elements(args):
         keys = range(len(args))
-        return dict(zip(keys, args))
+        return (dict(zip(keys, args)))
 
 
     @staticmethod
