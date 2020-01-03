@@ -83,8 +83,10 @@ class TestMachine():
 
     # Helper method, not an actual test
     def __generate_schedule__(self, workers):
+
         w_slots = self.scheduler.make_slots(
             ScheduleInterpreter.TYPE_WORKER, *workers)
+        
         s_slots = self.scheduler.make_slots(
             ScheduleInterpreter.TYPE_SHIFT, open_position_for_makerspace)
 
@@ -146,15 +148,27 @@ class TestMachine():
         pass
     def test_favor_long_shifts(self):
         pass
+
     def test_sanitize_input(self):
         dirty_json = dirty_avail_1
         clean_json = self.scheduler.convert_old_format(dirty_json)
         goal_json = clean_avail_1
 
+        just_name = {"Name": "Apple"}
+        lowercase_name = self.scheduler.convert_old_format(just_name)
+
         try:
             assert(clean_json == goal_json)
+            assert({"name": "Apple"} == lowercase_name)
+
         except AssertionError:
             raise AssertionError(f"Cleaned data does not met standards:\nResult: {clean_json}\nGoal: {goal_json}")
+
+        for avail in [avail_M, avail_T, avail_WTF, avail_USR, ben_avail, short_avail]:
+            clean = self.scheduler.convert_old_format(avail.copy())
+
+            assert(clean.get("name", None) is not None)
+
 
     def test_interpret_match_results(self):
         stubbed_results = clean_solver_output
