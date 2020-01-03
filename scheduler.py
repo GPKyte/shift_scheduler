@@ -141,7 +141,7 @@ class ScheduleInterpreter():
             W = shift[worker_slot]
             S = shift[shift_slot]
             C = Cell(
-                row=(S.time_of_day // self.SHIFT_LENGTH),
+                row=(rows.index(to_row(S))),
                 col=(columns.index(to_col(S))),
                 value=W
             )
@@ -296,10 +296,13 @@ class ScheduleInterpreter():
     def make_table(self, cells):
         width = max([C.col for C in cells])
         height = max([C.row for C in cells])
-        table = [[None for col in range(width)]
-                    for row in range(height)]
+        table = [[None for col in range(width+1)]
+                    for row in range(height+1)]
 
-        table[cell.row][cell.col] = str(cell.value)
+        for C in cells:
+            row = table[C.row]
+            row[C.col] = str(C.value)
+
         self.prune_empty_lists_from(table)
 
         return table
