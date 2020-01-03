@@ -154,20 +154,29 @@ class TestMachine():
         clean_json = self.scheduler.sanitize_availability(dirty_json)
         goal_json = clean_avail_1
 
-        just_name = {"Name": "Apple"}
-        lowercase_name = self.scheduler.sanitize_availability(just_name)
+        try:
+            just_name = {"Name": "Apple"} # Missing important fields
+            lowercase_name = self.scheduler.sanitize_availability(just_name)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("Expected Error not raised")
 
         try:
             assert(clean_json == goal_json)
-            assert({"name": "Apple"} == lowercase_name)
-
         except AssertionError:
             raise AssertionError(f"Cleaned data does not met standards:\nResult: {clean_json}\nGoal: {goal_json}")
 
         for avail in [avail_M, avail_T, avail_WTF, avail_USR, ben_avail, short_avail]:
-            clean = self.scheduler.sanitize_availability(avail.copy())
+            A = avail.copy()
+            A['id'] = None
+            A['type'] = 0
+            clean = self.scheduler.sanitize_availability(A)
 
-            assert(clean.get("name", None) is not None)
+            # Note on:  assert(clean.__contains__('name'))
+            # Not part of sanitize requirements,
+            # but once before, 'name' was disappearing after avail santized
+            assert(clean.__contains__('name'))
 
 
     def test_interpret_match_results(self):
