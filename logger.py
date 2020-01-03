@@ -1,5 +1,8 @@
+# Set of utils for logging and debugging
+from inspect import getframeinfo, stack
+
 VERBOSE = True
-DEBUG = True
+DEBUG = False
 
 MONITOR = dict()
 
@@ -18,15 +21,15 @@ def log_debug(debugging_content):
     if DEBUG:
         log(debugging_content)
 
-def log_value(var_name, value):
-    location_id = debuginfo(2)
-    log_debug(f"{var_name} @{location_id}: {value}")
+def log_value(var_name, value, stack_layer=2):
+    location_id = debuginfo(stack_layer)
+    log_debug(f">>>\t@{location_id}:{var_name} = {value}")
 
 def log(printable_data):
     print(printable_data)
 
 def track_var(var_name, reference):
-    log_var(var_name, reference)
+    log_value(var_name, reference, 3)
 
     global MONITOR
     MONITOR[var_name] = reference
@@ -37,3 +40,4 @@ def inspect_var(var_name):
 def inspect_var():
     for var in MONITOR.keys():
         leg_debug(f"{var}: {MONITOR[var]}")
+        raw_input()

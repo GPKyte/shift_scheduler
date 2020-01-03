@@ -5,7 +5,6 @@ from logger import *
 
 # Test file for validating conversions between I/O
 from pprint import pprint
-from inspect import getframeinfo, stack
 
 
 def main():
@@ -127,12 +126,12 @@ class TestMachine():
     def test_exclusive_slots(self):
         workers = (avail_USR, avail_WTF)
         table = self.__generate_schedule__(workers)
-        print(as_CSV(table))
+        log_debug(as_CSV(table))
 
     def test_overlapping_slots(self):
         workers = (avail_T, avail_WTF)
         table = self.__generate_schedule__(workers)
-        print(as_CSV(table))
+        log_debug(as_CSV(table))
 
     def test_timerange_to_slots(self):
         # From 10 am to 12 pm
