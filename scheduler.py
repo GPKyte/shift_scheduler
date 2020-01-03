@@ -80,29 +80,18 @@ class ScheduleInterpreter():
         self.sanitize_availability(avail)
 
         times_by_day = self.extract_and_expand_time_ranges(avail)
-        nice_name = avail.get("name", None) # If not provided, not needed
-        identifier = avail["id"]
-        timeslot_class = avail["type"]
+        name = avail.get("name", None) # If not provided, not needed
+        ID = avail["id"]
+        slot_type = avail["type"]
         weight = int()
         slots = list()
-        track_var("slots", slots)
 
         for key in times_by_day.keys():
-            # Make real slots from present data
             day_in_cycle = int(key)
 
             for TOD in times_by_day[key]:
-
-                slots += Slot(
-                    day_in_cycle,
-                    identifier,
-                    nice_name,
-                    TOD,
-                    timeslot_class,
-                    weight
-                )
-
-            inspect_var()
+                P = Slot(day_in_cycle, ID, name, TOD, slot_type, weight)
+                slots.append(P)
 
         return slots
 
