@@ -75,32 +75,6 @@ class ScheduleInterpreter():
     def convert_availability_to_slots(self, avail, weight_policy=None):
         slots = []
 
-        def get_times_of_day_for_whole_cycle(avail):
-            times_by_day = {}
-
-            for key in avail.keys():
-                some_times_of_day = []
-
-                # Convert timeranges into one list of time_of_day values
-                try:
-                    day_in_cycle = int(key)
-                except ValueError:
-                    break # key was not an int and thus not relevant
-
-                # Format looks like "10am-11:30am, 1:00pm-5:00pm"
-                for timerange in avail[day_in_cycle].split(', '):
-                    start, end = timerange.split("-")
-                    military_time_on = True
-
-                    some_times_of_day += \
-                        create_TOD_slot_range(start, end, military_time_on)
-
-                times_by_day[key] = some_times_of_day
-
-
-            return times_by_day
-
-
         # Sanitize inputs
         assert(len(avail) > 0)
         self.convert_old_format(avail)
@@ -243,6 +217,32 @@ class ScheduleInterpreter():
             ranges.append(cur_range)
 
         return(ranges)
+
+
+    def get_times_of_day_for_one_day(self, avail):
+        times_by_day = {}
+
+        for key in avail.keys():
+            some_times_of_day = []
+
+            # Convert timeranges into one list of time_of_day values
+            try:
+                day_in_cycle = int(key)
+            except ValueError:
+                break # key was not an int and thus not relevant
+
+            # Format looks like "10am-11:30am, 1:00pm-5:00pm"
+            for timerange in avail[day_in_cycle].split(', '):
+                start, end = timerange.split("-")
+                military_time_on = True
+
+                some_times_of_day += \
+                    self.create_TOD_slot_range(start, end, military_time_on)
+
+            times_by_day[key] = some_times_of_day
+
+
+        return times_by_day
 
 
     # TODO: Update docs
