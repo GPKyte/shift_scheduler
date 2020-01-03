@@ -150,10 +150,10 @@ class ScheduleInterpreter():
         schedule_table = self.make_table(cells)
 
         # Use following loop to Add Time of Dat Column to Left Side of table
-        assert(len(rows) == len(table))
+        assert(len(rows) == len(schedule_table))
         for row_index in range(len(rows)):
-            time_of_day = rows[row_index][0]
-            schedule_table[row_index].insert(index=0, object=time_of_day)
+            time_of_day = rows[row_index]
+            schedule_table[row_index].insert(0, time_of_day)
 
         # Add headers to table
         headers = ["Time of Day"] + [C[0] for C in columns]
