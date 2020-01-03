@@ -126,7 +126,7 @@ class ScheduleInterpreter():
         worker_slot = 0
         shift_slot = 1
 
-        shifts = assignments[shift_slot]
+        shifts = [A[shift_slot] for A in assignments]
         cells = list()
 
         def to_col(slot):
