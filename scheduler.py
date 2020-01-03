@@ -92,6 +92,8 @@ class ScheduleInterpreter():
         weight = 0
         times_by_day = get_times_of_day_for_whole_cycle(avail)
 
+        track_var("slots", slots)
+
         for key in times_by_day.keys():
             # Make real slots from present data
             day_in_cycle = int(key)
@@ -107,6 +109,8 @@ class ScheduleInterpreter():
                     timeslot_class,
                     weight
                 )
+
+            inspect_var()
 
         return slots
 

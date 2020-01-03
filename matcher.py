@@ -9,6 +9,8 @@
 # for more information on time range interpretation of availabilities
 from scheduler import ScheduleInterpreter
 from subprocess import check_output
+from logger import *
+
 import json
 
 
