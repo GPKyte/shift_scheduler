@@ -41,6 +41,7 @@ class ScheduleInterpreter():
         # TODO: Refactor ID scheme
         return ScheduleInterpreter.index_elements(*schedules)
 
+    # Modifies avail in-place
     def convert_old_format(self, avail):
 
         for key in list(avail.keys()):
@@ -74,10 +75,6 @@ class ScheduleInterpreter():
     def convert_availability_to_slots(self, avail, weight_policy=None):
         slots = []
 
-        def sanitize(avail):
-            assert(len(avail) > 0)
-            convert_old_format(avail)
-
         def get_times_of_day_for_whole_cycle(avail):
             times_by_day = {}
 
@@ -104,10 +101,21 @@ class ScheduleInterpreter():
             return times_by_day
 
 
+        # Sanitize inputs
+        assert(len(avail) > 0)
+        self.convert_old_format(avail)
+
+        nice_name = avail.get("name", None) # If not provided, not needed
+
+        try:
+            identifier = avail["id"]
+            timeslot_class = avail["type"]
+
+        except KeyError as e:
+            msg = f"Availability object missing key '{e.args[0]}':\n\t{list(avail.keys())}"
+            raise ValueError(msg)
+
         weight = 0
-        nice_name = avail["name"]
-        identifier = avail["id"]
-        timeslot_class = avail["type"]
         times_by_day = get_times_of_day_for_whole_cycle(avail)
 
         for key in times_by_day.keys():
