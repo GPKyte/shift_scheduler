@@ -131,11 +131,11 @@ class ScheduleInterpreter():
 
         def to_col(slot):
             return (slot.day_in_cycle, slot.ID)
-        columns = list(set(map(to_col, shifts)))
+        columns = sorted(list(set(map(to_col, shifts))))
 
         def to_row(slot):
             return (slot.time_of_day)
-        rows = list(set(map(to_row, shifts)))
+        rows = sorted(list(set(map(to_row, shifts))))
 
         for shift in assignments:
             W = shift[worker_slot]
@@ -156,7 +156,7 @@ class ScheduleInterpreter():
             schedule_table[row_index].insert(0, time_of_day)
 
         # Add headers to table
-        headers = ["Time of Day"] + [C[0] for C in columns]
+        headers = [["Time of Day"] + [C[0] for C in columns]]
         schedule = headers + schedule_table
 
         return schedule
