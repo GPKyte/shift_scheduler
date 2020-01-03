@@ -93,7 +93,7 @@ def make_matching(availability_file):
 
     # TODO: Find the bug that causes an empty line to be in output
     assignments = assign_shifts(w_slots, s_slots)
-    table = scheduler.create_master_schedule(assignments, ID_2_slotname)
+    table = scheduler.make_schedule(assignments, ID_2_slotname)
 
     output_file = open('new_schedule.csv', 'w')
     output_file.write(as_CSV(table))
