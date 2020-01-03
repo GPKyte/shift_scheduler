@@ -14,7 +14,7 @@
 # collected and reinterpretted as human readable shifts assigned
 # the original n workers. Ideally all shifts will be matched
 # and each worker has a reasonable shift
-TESTING = True
+from logger import *
 
 
 class ScheduleInterpreter():
