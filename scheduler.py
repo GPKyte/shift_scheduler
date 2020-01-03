@@ -42,7 +42,8 @@ class ScheduleInterpreter():
         return ScheduleInterpreter.index_elements(schedules)
 
     # Modifies avail in-place
-    def convert_old_format(self, avail):
+    def sanitize_availability(self, avail):
+        assert(len(avail) > 0)
 
         for key in list(avail.keys()):
             str_key = str(key)
@@ -69,29 +70,22 @@ class ScheduleInterpreter():
             if new_key != key:
                 avail.pop(key)
 
+        assert(avail.__contains__("id"))
+        assert(avail.__contains__("type"))
+
         return avail
 
 
     def convert_availability_to_slots(self, avail, weight_policy=None):
-        slots = []
-
-        # Sanitize inputs
-        assert(len(avail) > 0)
-        self.convert_old_format(avail)
-
-        nice_name = avail.get("name", None) # If not provided, not needed
-
-        try:
-            identifier = avail["id"]
-            timeslot_class = avail["type"]
-
-        except KeyError as e:
-            msg = f"Availability object missing key '{e.args[0]}':\n\t{list(avail.keys())}"
-            raise ValueError(msg)
+        self.sanitize_availability(avail)
 
         weight = 0
         times_by_day = self.get_times_of_day_for_whole_cycle(avail)
-
+        nice_name = avail.get("name", None) # If not provided, not needed
+        identifier = avail["id"]
+        timeslot_class = avail["type"]
+        weight = int()
+        slots = list()
         track_var("slots", slots)
 
         for key in times_by_day.keys():

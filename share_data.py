@@ -36,6 +36,7 @@ avail_USR = {
     'R': all_day
 }
 ben_avail = {
+    # Object has 100 slots: 4slots/hr * (3 + 4 + 7 + 2 + 4 + 3 + 2)hr
     'Name': 'Ben S',
     'Hours': '8',
     'M': '10:00-13:00, 13:00-17:00',

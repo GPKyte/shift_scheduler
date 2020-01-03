@@ -42,8 +42,8 @@ class TestMachine():
 
     def run_new_tests(self):
         try:
-            self.test_sanitize_input()
             self.test_exclusive_slots()
+            self.test_overlapping_slots()
             print("SUCCESS for new test(s)")
 
         except Exception:
@@ -52,6 +52,7 @@ class TestMachine():
 
     def run_regression_tests(self):
         try:
+            self.test_sanitize_input()
             self.test_join_lists()
             self.test_timecheck()
             self.test_group_sequential_ranges()
@@ -85,7 +86,7 @@ class TestMachine():
 
         w_slots = self.scheduler.make_slots(
             ScheduleInterpreter.TYPE_WORKER, *workers)
-        
+
         s_slots = self.scheduler.make_slots(
             ScheduleInterpreter.TYPE_SHIFT, open_position_for_makerspace)
 
@@ -150,11 +151,11 @@ class TestMachine():
 
     def test_sanitize_input(self):
         dirty_json = dirty_avail_1
-        clean_json = self.scheduler.convert_old_format(dirty_json)
+        clean_json = self.scheduler.sanitize_availability(dirty_json)
         goal_json = clean_avail_1
 
         just_name = {"Name": "Apple"}
-        lowercase_name = self.scheduler.convert_old_format(just_name)
+        lowercase_name = self.scheduler.sanitize_availability(just_name)
 
         try:
             assert(clean_json == goal_json)
@@ -164,7 +165,7 @@ class TestMachine():
             raise AssertionError(f"Cleaned data does not met standards:\nResult: {clean_json}\nGoal: {goal_json}")
 
         for avail in [avail_M, avail_T, avail_WTF, avail_USR, ben_avail, short_avail]:
-            clean = self.scheduler.convert_old_format(avail.copy())
+            clean = self.scheduler.sanitize_availability(avail.copy())
 
             assert(clean.get("name", None) is not None)
 
