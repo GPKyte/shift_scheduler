@@ -1,5 +1,6 @@
 # Set of utils for logging and debugging
 from inspect import getframeinfo, stack
+from pprint import pprint
 
 VERBOSE = True
 DEBUG = True
@@ -21,6 +22,9 @@ def log_debug(debugging_content):
     global DEBUG
     if DEBUG:
         log(debugging_content)
+
+def log_pretty_data(data):
+    pprint(data)
 
 def log_value(var_name, value, stack_layer=2):
     location_id = debuginfo(stack_layer)

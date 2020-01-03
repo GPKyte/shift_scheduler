@@ -19,6 +19,8 @@ import json
 def as_CSV(table):
     lines = []
 
+    log_pretty_data(table)
+
     for each_row in table:
         table_cells_as_strings = list(map(str, each_row))
         lines.append(",".join(table_cells_as_strings))
