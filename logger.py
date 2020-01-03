@@ -2,7 +2,8 @@
 from inspect import getframeinfo, stack
 
 VERBOSE = True
-DEBUG = False
+DEBUG = True
+NOT_NOW = -1
 
 MONITOR = dict()
 
@@ -25,6 +26,12 @@ def log_value(var_name, value, stack_layer=2):
     location_id = debuginfo(stack_layer)
     log_debug(f">>>\t@{location_id}:{var_name} = {value}")
 
+def logg(data, log_level):
+    if log_level is NOT_NOW:
+        pass
+    else:
+        log(data)
+
 def log(printable_data):
     print(printable_data)
 
@@ -39,5 +46,6 @@ def inspect_var(var_name):
 
 def inspect_var():
     for var in MONITOR.keys():
-        leg_debug(f"{var}: {MONITOR[var]}")
-        raw_input()
+        log_debug(f"{var}: {MONITOR[var]}")
+
+    input()
