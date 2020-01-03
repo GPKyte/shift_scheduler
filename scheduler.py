@@ -395,7 +395,7 @@ class Slot():
             self,
             day_in_cycle=-1,
             identifier=-1,
-            nice_name=None,
+            nice_name="No Name",
             time_of_day=-1,
             timeslot_class=-1,
             weight=-1,
@@ -457,7 +457,6 @@ class Slot():
     def validation_check_passes(self):
         assert(self.day_in_cycle is not None)
         assert(self.ID is not None)
-        assert(self.name is not None)
         assert(self.time_of_day >= 0)
         assert(self.type >= 0)
         assert(self.weight >= 0)
