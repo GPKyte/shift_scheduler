@@ -40,7 +40,7 @@ def assign_shifts(w_slots, s_slots):
     vertex_2_slot = dict(zip(vertices, slots))
     slot_2_vertex = dict(zip(slots, vertices))
 
-    edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s))
+    edges = [(slot_2_vertex.get(w), slot_2_vertex.get(s), w.weight)
                 for w, s in edges]
 
     # Solve Job Matching problem
@@ -186,15 +186,15 @@ def reverse_keys_and_values(mapping):
 
 
 # Pretty cut and dry method here to save file in format solver expects
-# value_map: converts UIDs to indexed sequential vertices in graph
-# TODO: Change weight (third number currently 0) of edges to favor long shifts
+# First two lines will be #Vertices and #Edges
+# Followed by lines looking like x y z
+# And edge is referenced by a pair of vertices and given some weight
 def save_data_for_solver(edges, num_vertices, output_file_name):
-    # First two lines will be #Vertices and #Edges
-    # Followed by lines looking like x y 0
-    # And edge is referenced by a pair of vertices and given some weight
+    x = 0
+    y = 1
+    weight = 2
     output_data = [str(num_vertices), str(len(edges))]
-    output_data += ["%s %s 0" % (value_map[e[0]], value_map[e[1]])
-        for e in edges]
+    output_data += [f"{E[x]} {E[y]} {E[weight]}" for E in edges]
 
     output_file = open(output_file_name, 'w')
     output_file.write('\n'.join(output_data))
