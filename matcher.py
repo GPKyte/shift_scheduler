@@ -136,7 +136,7 @@ def parse_graph_solution(solver_output):
     # TODO: does name imply mutator method even when it's for a filter?
     # goal is to return bool for every element in list individually
     def clean(a_line_to_the_solution):
-        empty == None
+        empty = None
 
         if a_line_to_the_solution is empty:
             return False
