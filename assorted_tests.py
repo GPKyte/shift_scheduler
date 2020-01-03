@@ -98,6 +98,23 @@ class TestMachine():
 
     ### General testing ###
 
+    def test_create_slots_from_avail(self):
+
+        avail = ben_avail.copy()
+        avail["id"] = key
+        avail["type"] = type_id
+
+        slots = self.scheduler.convert_availability_to_slots(avail)
+        s0 = slots[0]
+
+        assert(s0.weight == 0) # 0-weight policy default
+        assert(s0.time_of_day == 10*60)
+        assert(s0.id == ID)
+        assert(s0.day_in_cycle == 0) # Monday is first
+
+        assert(len(slots) == 100)
+
+
     def test_variable_table_size(self):
         start_minute = 10 * 60
         end_minute = 17 * 60
