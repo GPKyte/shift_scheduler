@@ -79,8 +79,7 @@ class ScheduleInterpreter():
     def convert_availability_to_slots(self, avail, weight_policy=None):
         self.sanitize_availability(avail)
 
-        weight = 0
-        times_by_day = self.get_times_of_day_for_one_day(avail)
+        times_by_day = self.extract_and_expand_time_ranges(avail)
         nice_name = avail.get("name", None) # If not provided, not needed
         identifier = avail["id"]
         timeslot_class = avail["type"]
@@ -217,27 +216,35 @@ class ScheduleInterpreter():
         return(ranges)
 
 
-    def get_times_of_day_for_one_day(self, avail):
-        times_by_day = {}
+    def extract_and_expand_time_ranges(self, avail):
+        assert(len(avail.keys()) > 0)
 
-        for key in avail.keys():
-            some_times_of_day = []
-
-            # Convert timeranges into one list of time_of_day values
-            try:
-                day_in_cycle = int(key)
-            except ValueError:
-                break # key was not an int and thus not relevant
-
+        def expand(timeranges_in_day):
+            times_of_day = list()
             # Format looks like "10am-11:30am, 1:00pm-5:00pm"
-            for timerange in avail[day_in_cycle].split(', '):
-                start, end = timerange.split("-")
-                military_time_on = True
+            for timerange in timeranges_in_day.split(', '):
+                assert("-" in timerange)
 
-                some_times_of_day += \
+                start, end = timerange.split("-")
+                military_time_on = False
+
+                times_of_day += \
                     self.create_TOD_slot_range(start, end, military_time_on)
 
-            times_by_day[key] = some_times_of_day
+            return times_of_day
+
+        times_by_day = {}
+
+        for day_in_cycle in avail.keys():
+            try:
+                times_of_day = expand(avail[day_in_cycle])
+                assert(len(times_of_day) > 0)
+                times_by_day[day_in_cycle] = times_of_day
+
+            except (AssertionError, AttributeError) as e:
+                # Eat Error because some items in avail are irrelevant
+                logg(e, NOT_NOW)
+                continue
 
 
         return times_by_day
