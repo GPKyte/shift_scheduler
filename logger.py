@@ -46,6 +46,6 @@ def inspect_var(var_name):
 
 def inspect_var():
     for var in MONITOR.keys():
-        log_debug(f"{var}: {MONITOR[var]}")
+        log_debug(f"<<<\t{var}: {MONITOR[var]}")
 
     input()
