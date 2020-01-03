@@ -90,7 +90,7 @@ class ScheduleInterpreter():
             raise ValueError(msg)
 
         weight = 0
-        times_by_day = get_times_of_day_for_whole_cycle(avail)
+        times_by_day = self.get_times_of_day_for_whole_cycle(avail)
 
         track_var("slots", slots)
 
