@@ -124,7 +124,7 @@ class ScheduleInterpreter():
 
     # TODO: Change this method to just take 1-tuples, not pairs
     # TODO: Consider whether this breaks API and whether it matter because we still have a low method to use for testing :)
-    def create_master_schedule(self, assigned_shifts):
+    def make_schedule(self, assigned_shifts):
         w_slot = 0
         slots = [pair[w_slot] for pair in assigned_shifts]
 
@@ -242,7 +242,7 @@ class ScheduleInterpreter():
     # TODO: Pull out Slot-specific Impl details into a proceedure
     # TODO: Test both the index generation proceedure and the table dimensions
     # TODO: Make empty table option?? Maybe not worth time
-    # TODO: Move the headers to the create_master_schedule method?
+    # TODO: Move the headers to the make_schedule method?
     # Headers in top row,
     def make_table(self, slots):
         def slot_to_col(slot):

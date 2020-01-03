@@ -91,7 +91,7 @@ class TestMachine():
             ScheduleInterpreter.TYPE_SHIFT, open_position_for_makerspace)
 
         shifts = assign_shifts(w_slots, s_slots)
-        table = self.scheduler.create_master_schedule(shifts)
+        table = self.scheduler.make_schedule(shifts)
 
         return table
 
