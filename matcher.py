@@ -142,12 +142,12 @@ def parse_graph_solution(solver_output):
             return False
         if " " not in a_line_to_the_solution:
             return False
-        
+
         pairs = a_line_to_the_solution.split(" ")
 
         if len(pairs) != 2:
             return False
-        
+
         try:
             int(pairs[0])
             int(pairs[1])
@@ -164,6 +164,9 @@ def parse_graph_solution(solver_output):
     matched_edges = map( # to integers for table
         lambda pair: (int(pair[0]), int(pair[1])),
         str_matched_edges)
+
+    track_var("solver_output", solver_output)
+    track_var("sanitized_data", sanitized_data)
 
     return(matched_edges)
 
